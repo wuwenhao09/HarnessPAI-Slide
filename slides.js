@@ -12,11 +12,22 @@
     { name: "Background", english: "01 · Background" },
     { name: "Motivation", english: "02 · Motivation" },
     { name: "Method", english: "03 · Method" },
-    { name: "Experiments", english: "04 · Experiments" }
-  ].map((chapter, chapterIndex) => ({
-    ...chapter,
-    start: slides.findIndex((slide) => Number(slide.dataset.chapter) === chapterIndex)
-  }));
+    { name: "Experiments", english: "04 · Experiments", agendaEndClass: "takeaways-slide" }
+  ].map((chapter, chapterIndex) => {
+    const start = slides.findIndex((slide) => Number(slide.dataset.chapter) === chapterIndex);
+    const sectionEnd = slides.reduce((lastIndex, slide, slideIndex) => (
+      Number(slide.dataset.chapter) === chapterIndex ? slideIndex : lastIndex
+    ), -1);
+    const agendaBoundary = chapter.agendaEndClass
+      ? slides.findIndex((slide) => slide.classList.contains(chapter.agendaEndClass))
+      : -1;
+    return {
+      ...chapter,
+      start,
+      end: sectionEnd,
+      agendaEnd: agendaBoundary > start ? agendaBoundary - 1 : sectionEnd
+    };
+  });
   const figureDialog = makeFigureDialog();
   let current = 0;
   let elapsed = 0;
@@ -122,6 +133,14 @@
       showSlide(index);
     });
     document.getElementById("overview-grid").append(overviewItem);
+  });
+
+  const agendaLinks = Array.from(document.querySelectorAll(".agenda a"));
+  chapters.slice(1).forEach((chapter, index) => {
+    const link = agendaLinks[index];
+    if (!link) return;
+    link.href = `#slide-${chapter.start + 1}`;
+    link.querySelector(".agenda-pages").textContent = `${String(chapter.start + 1).padStart(2, "0")}–${String(chapter.agendaEnd + 1).padStart(2, "0")}`;
   });
 
   function resizeDeck() {
@@ -272,6 +291,15 @@
       v: toggleVideo, p: printDeck, "?": () => openDialog(helpDialog), escape: () => toggleNotes(false)
     };
     if (actions[key]) { event.preventDefault(); actions[key](); }
+  });
+
+  stage.addEventListener("click", (event) => {
+    if (event.button !== 0 || event.defaultPrevented) return;
+    if (event.target.closest("video, button, a, input, textarea, select, [contenteditable='true'], [role='button'], dialog")) return;
+    if (window.getSelection().toString()) return;
+    const bounds = stage.getBoundingClientRect();
+    const direction = event.clientX < bounds.left + bounds.width / 2 ? -1 : 1;
+    showSlide(current + direction);
   });
 
   stage.addEventListener("touchstart", (event) => {

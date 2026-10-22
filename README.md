@@ -23,7 +23,7 @@ Open `index.html` directly in a browser. Keep the directory and its `media` fold
 | Close notes or a dialog | `Esc` |
 | Enlarge a focused paper figure | `Enter` or `Space` |
 
-The chapter buttons in the top navigation jump directly to their sections. Horizontal swipes navigate on touchscreens, and the speaker-notes panel includes a manual timer. Videos pause when leaving their slide.
+The chapter buttons in the top navigation jump directly to their sections. Left-click the left half of the slide to go back or the right half to go forward; videos, links, buttons, and figures keep their own click behavior. Horizontal swipes navigate on touchscreens, and the speaker-notes panel includes a manual timer. Videos pause when leaving their slide.
 
 ## Four-part structure
 

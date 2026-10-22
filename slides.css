@@ -428,7 +428,7 @@ video { display: block; width: 100%; background: #111; aspect-ratio: 1024 / 588;
 .research-stats span { font-size: 17px; color: var(--muted); }
 .research-stats strong { display: block; font-family: var(--serif); font-size: 36px; line-height: 1.2; margin: 5px 0; }
 .research-stats p { font-size: 16px; color: var(--muted); line-height: 1.5; }
-.standard-rollout img { height: 220px; }
+.standard-rollout img { height: 300px; }
 .hybrid-rollout img { height: 190px; }
 .paradigm-figure img { height: 335px; }
 .research-comparison { display: grid; grid-template-columns: repeat(3, 1fr); gap: 31px; }
@@ -471,19 +471,24 @@ video { display: block; width: 100%; background: #111; aspect-ratio: 1024 / 588;
 .pipeline-split { grid-template-columns: 1.1fr 1fr; gap: 55px; }
 .pipeline-split .research-figure img { height: 465px; }
 .pipeline-split .research-list { font-size: 21px; }
-.evolution-pipeline-figure img { height: 405px; }
-.research-steps { list-style: none; display: grid; grid-template-columns: 1fr 1.3fr 1fr 1fr; gap: 23px; margin: 4px 0 0; padding: 0; }
-.research-steps strong { display: block; font-size: 20px; color: var(--blue); margin-bottom: 7px; }
-.research-steps span { display: block; font-size: 16px; line-height: 1.5; }
+.evolution-focus .slide-body { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(350px, .8fr); align-items: stretch; gap: 30px; }
+.evolution-focus .evolution-pipeline-figure { height: 100%; min-height: 0; }
+.evolution-focus .evolution-pipeline-figure img { width: 100%; height: 100%; object-fit: contain; }
+.evolution-focus .research-steps { list-style: none; counter-reset: evolution-step; display: flex; flex-direction: column; justify-content: space-between; gap: 0; height: 100%; margin: 0; padding: 14px 0 14px 18px; border-left: 1px solid var(--line); }
+.evolution-focus .research-steps li { position: relative; padding: 18px 0 18px 50px; border-bottom: 1px solid var(--line); }
+.evolution-focus .research-steps li:last-child { border-bottom: 0; }
+.evolution-focus .research-steps li::before { counter-increment: evolution-step; content: counter(evolution-step, decimal-leading-zero); position: absolute; top: 20px; left: 0; width: 34px; height: 34px; display: grid; place-items: center; color: var(--blue); background: var(--blue-soft); border-radius: 50%; font-size: 11px; font-weight: 700; letter-spacing: .3px; }
+.evolution-focus .research-steps strong { display: block; color: var(--navy); font-size: 22px; margin-bottom: 6px; }
+.evolution-focus .research-steps span { display: block; color: var(--muted); font-size: 18px; line-height: 1.6; }
 .contract-table th, .contract-table td { padding: 18px 15px; }
 .memory-figure img { height: 440px; }
 .graph-memory-figure img { height: 340px; }
-.research-dataflow { display: grid; grid-template-columns: 1fr 34px 1.15fr 34px 1fr; align-items: center; gap: 16px; padding: 14px 0 20px; }
+.research-dataflow { display: grid; grid-template-columns: 1fr 34px 1.15fr 34px 1fr; align-items: start; gap: 16px; padding: 14px 0 20px; }
 .research-dataflow > div { border-top: 2px solid var(--teal); padding-top: 13px; }
 .research-dataflow > div > span { color: var(--teal); font-size: 15px; }
 .research-dataflow h3 { margin: 9px 0 11px; font-size: 23px; }
 .research-dataflow p { font-size: 18px; }
-.research-dataflow > b { font-size: 32px; color: #92a7c1; font-weight: 400; }
+.research-dataflow > b { align-self: center; font-size: 32px; color: #92a7c1; font-weight: 400; }
 .benchmark-strip img { height: 186px; }
 .protocol-summary { font-size: 18px; }
 .protocol-summary th, .protocol-summary td { padding: 7px 14px; }
@@ -541,9 +546,6 @@ video { display: block; width: 100%; background: #111; aspect-ratio: 1024 / 588;
 .future-directions { display: flex; flex-direction: column; gap: 16px; margin-top: 2px; }
 .future-directions h3 { font-size: 25px; margin-bottom: 5px; }
 .future-directions p { font-size: 20px; line-height: 1.55; }
-.future-closing { display: flex; align-items: center; justify-content: space-between; gap: 25px; margin-top: auto; padding-top: 13px; border-top: 1px solid var(--line); }
-.future-closing p { color: var(--muted); font-size: 17px; }
-.future-closing strong { font-size: 26px; white-space: nowrap; }
 .notes-source { border-top: 1px solid var(--line); padding-top: 14px; color: var(--muted); font-size: 14px; }
 .sft-protocol { font-size: 17px; line-height: 1.5; color: var(--muted); }
 .sft-protocol strong { color: var(--teal); }
