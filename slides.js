@@ -9,16 +9,16 @@
   const overviewDialog = document.getElementById("overview-dialog");
   const helpDialog = document.getElementById("help-dialog");
   const chapters = [
-    { name: "Introduction", english: "Research Seminar" },
-    { name: "Background", english: "01 · Background & Observations" },
-    { name: "Motivation", english: "02 · Motivation & Design Choice" },
-    { name: "Method & Evolution", english: "03 · Framework & Evolution" },
-    { name: "Experiments", english: "04 · Experiments & Data Feedback" },
-    { name: "Appendix", english: "Appendix · Discussion Material" }
+    { name: "Overview", english: "HarnessPAI" },
+    { name: "Background", english: "01 · Background" },
+    { name: "Motivation", english: "02 · Motivation" },
+    { name: "Method", english: "03 · Method" },
+    { name: "Experiments", english: "04 · Experiments" }
   ].map((chapter, chapterIndex) => ({
     ...chapter,
     start: slides.findIndex((slide) => Number(slide.dataset.chapter) === chapterIndex)
   }));
+  const figureDialog = makeFigureDialog();
   let current = 0;
   let elapsed = 0;
   let timerStartedAt = null;
@@ -31,6 +31,27 @@
     if (text !== undefined) element.textContent = text;
     return element;
   };
+
+  function makeFigureDialog() {
+    const dialog = document.createElement("dialog");
+    dialog.id = "figure-dialog";
+    dialog.setAttribute("aria-labelledby", "figure-title");
+    const heading = document.createElement("div");
+    heading.className = "dialog-heading";
+    const title = document.createElement("h2");
+    title.id = "figure-title";
+    const close = document.createElement("button");
+    close.type = "button";
+    close.textContent = "×";
+    close.setAttribute("aria-label", "Close enlarged figure");
+    close.setAttribute("data-close-dialog", "");
+    heading.append(title, close);
+    const img = document.createElement("img");
+    img.id = "figure-image";
+    dialog.append(heading, img);
+    document.body.append(dialog);
+    return dialog;
+  }
 
   slides.forEach((slide, index) => {
     const chapterIndex = Number(slide.dataset.chapter);
@@ -53,12 +74,11 @@
     heading.append(makeElement("p", "section-label", chapters[chapterIndex].english));
     heading.append(makeElement("h2", "", slide.dataset.title));
     slide.prepend(topline, heading);
-    slide.append(makeElement("p", "slide-source", slide.dataset.source));
     const footer = makeElement("footer", "slide-footer");
     footer.style.setProperty("--progress", `${((index + 1) / slides.length) * 100}%`);
-    footer.append(makeElement("span", "", "Darwin Agent Team · Research Seminar"));
+    footer.append(makeElement("span", "", "Darwin Agent Team"));
     footer.append(makeElement("span", "", "HarnessPAI · An Evolving Harness for Physical AI"));
-    footer.append(makeElement("span", "", `${String(index + 1).padStart(2, "0")} / ${slides.length}${chapterIndex === 5 ? " · App." : ""}`));
+    footer.append(makeElement("span", "", `${String(index + 1).padStart(2, "0")} / ${slides.length}`));
     slide.append(footer);
     slide.querySelectorAll("video").forEach((video) => {
       const poster = makeElement("img", "print-poster");
@@ -66,7 +86,29 @@
       poster.alt = `${video.getAttribute("aria-label")} (print poster)`;
       video.after(poster);
     });
-    const overviewItem = makeElement("button", `overview-item${chapterIndex === 5 ? " appendix" : ""}`);
+    slide.querySelectorAll(".research-figure img").forEach((img) => {
+      const openFigure = () => {
+        document.getElementById("figure-title").textContent = slide.dataset.title;
+        const enlarged = document.getElementById("figure-image");
+        enlarged.src = img.src;
+        enlarged.alt = img.alt;
+        figureDialog.showModal();
+      };
+      img.tabIndex = 0;
+      img.setAttribute("role", "button");
+      img.setAttribute("aria-haspopup", "dialog");
+      img.setAttribute("aria-label", `Enlarge figure: ${img.alt}`);
+      img.title = "Click to enlarge figure";
+      img.addEventListener("click", openFigure);
+      img.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.stopPropagation();
+          openFigure();
+        }
+      });
+    });
+    const overviewItem = makeElement("button", "overview-item");
     overviewItem.type = "button";
     overviewItem.dataset.slideIndex = String(index);
     overviewItem.append(makeElement("span", "", `${String(index + 1).padStart(2, "0")} / ${chapters[chapterIndex].name}`));
@@ -98,6 +140,9 @@
     document.getElementById("notes-page").textContent = `Slide ${current + 1} / ${slides.length} · ${chapters[Number(slide.dataset.chapter)].name}`;
     document.getElementById("notes-title").textContent = slide.dataset.title;
     document.getElementById("notes-content").replaceChildren(...Array.from(slide.querySelector(".speaker-note").childNodes, (node) => node.cloneNode(true)));
+    if (slide.dataset.source) {
+      document.getElementById("notes-content").append(makeElement("p", "notes-source", `Source: ${slide.dataset.source}`));
+    }
     document.getElementById("notes-next-title").textContent = slides[current + 1]?.dataset.title || "End of presentation";
     notesPanel.scrollTop = 0;
   }
@@ -254,7 +299,7 @@
   window.addEventListener("resize", resizeDeck);
   window.addEventListener("hashchange", () => showSlide(readHash(), false));
   window.addEventListener("beforeprint", () => {
-    document.title = "HarnessPAI · Beyond the Action Model · Research Seminar";
+    document.title = "HarnessPAI · An Evolving Harness for Physical AI";
     slides.forEach((slide) => {
       slide.inert = false;
       slide.setAttribute("aria-hidden", "false");

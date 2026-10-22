@@ -1,0 +1,152 @@
+[
+  {
+    "source": "../../../paper/images/framework/motivation_1.pdf",
+    "asset": "motivation_1.svg",
+    "viewBox": "0 0 875.8605 270.75"
+  },
+  {
+    "source": "../../../paper/images/framework/categories.pdf",
+    "asset": "categories.svg",
+    "viewBox": "0 0 513.12 161.039993"
+  },
+  {
+    "source": "../../../paper/images/framework/motivation_2.pdf",
+    "asset": "motivation_2.svg",
+    "viewBox": "0 0 878.1103 715.5"
+  },
+  {
+    "source": "../../../paper/images/framework/motivation_3.pdf",
+    "asset": "motivation_3.svg",
+    "viewBox": "0 0 880.3595 756.75"
+  },
+  {
+    "source": "../../../paper/images/framework/motivation_4.pdf",
+    "asset": "motivation_4.svg",
+    "viewBox": "0 0 881.8592 496.875"
+  },
+  {
+    "source": "../../../paper/images/framework/motivation_5.pdf",
+    "asset": "motivation_5.svg",
+    "viewBox": "0 0 1117.875 275.577"
+  },
+  {
+    "source": "../../../paper/images/framework/overview.pdf",
+    "asset": "overview.svg",
+    "viewBox": "0 0 816.96 355.92"
+  },
+  {
+    "source": "../../../paper/images/framework/framework.pdf",
+    "asset": "framework.svg",
+    "viewBox": "0 0 606 192.95999"
+  },
+  {
+    "source": "../../../paper/images/framework/motivation_3.pdf",
+    "asset": "hybrid-bowl.svg",
+    "cropViewBox": [
+      0,
+      540,
+      880.36,
+      216.75
+    ]
+  },
+  {
+    "source": "../../../paper/images/framework/close_loop.pdf",
+    "asset": "close_loop-initialization.svg",
+    "cropViewBox": [
+      0,
+      0,
+      218,
+      240.96
+    ]
+  },
+  {
+    "source": "../../../paper/images/framework/close_loop.pdf",
+    "asset": "close_loop-evolution.svg",
+    "cropViewBox": [
+      223,
+      0,
+      284.12,
+      240.96
+    ]
+  },
+  {
+    "source": "../../../paper/images/framework/task_library.pdf",
+    "asset": "task_library.svg",
+    "viewBox": "0 0 406.07999 229.92"
+  },
+  {
+    "source": "../../../paper/images/framework/skill_graph.pdf",
+    "asset": "skill_graph.svg",
+    "viewBox": "0 0 598.08002 210.95999"
+  },
+  {
+    "source": "../../../paper/images/framework/intro.pdf",
+    "asset": "intro-benchmarks.svg",
+    "cropViewBox": [
+      0,
+      0,
+      461.04,
+      103
+    ]
+  },
+  {
+    "source": "../../../paper/images/experiment/liboro_success_rate_reproduction.pdf",
+    "asset": "liboro_success_rate_reproduction.svg",
+    "viewBox": "0 0 1519.950352 409.348086"
+  },
+  {
+    "source": "../../../paper/images/experiment/liboro_vertical_task_success_with_ours.pdf",
+    "asset": "liboro_vertical_task_success_with_ours.svg",
+    "viewBox": "0 0 957.40582 361.871259"
+  },
+  {
+    "source": "../../../paper/images/experiment/b1K.pdf",
+    "asset": "b1K.svg",
+    "viewBox": "0 0 1055.584766 372.88582"
+  },
+  {
+    "source": "../../../paper/images/experiment/vacusim.pdf",
+    "asset": "vacusim.svg",
+    "viewBox": "0 0 1236.730304 463.286503"
+  },
+  {
+    "source": "../../../paper/images/experiment/pure_vs_harness_1x3.pdf",
+    "asset": "pure_vs_harness_1x3.svg",
+    "viewBox": "0 0 1050.538281 347.369906"
+  },
+  {
+    "source": "../../../paper/images/experiment/liboero_wam_task_success.pdf",
+    "asset": "liboero_wam_task_success.svg",
+    "viewBox": "0 0 1372.36582 519.539406"
+  },
+  {
+    "source": "../../../paper/images/experiment/evolution-process-all.pdf",
+    "asset": "evolution-process-all.svg",
+    "viewBox": "0 0 1421.157838 528.679891"
+  },
+  {
+    "source": "../../../paper/images/experiment/rollout_time_speedup_token_cost.pdf",
+    "asset": "runtime-time-speedup.svg",
+    "cropViewBox": [
+      0,
+      48,
+      900,
+      383.989
+    ]
+  },
+  {
+    "source": "../../../paper/images/experiment/libero_sft_suites_swap_task_6panel.pdf",
+    "asset": "libero_sft_suites_swap_task_6panel.svg",
+    "viewBox": "0 0 847.13 318.228"
+  },
+  {
+    "source": "../../../paper/images/experiment/libero_sft_task_swap_4panel.pdf",
+    "asset": "libero_sft_task_swap_4panel.svg",
+    "viewBox": "0 0 711.05 521.052"
+  },
+  {
+    "source": "../../../paper/images/experiment/dreamzero_sft_task_swap.pdf",
+    "asset": "dreamzero_sft_task_swap.svg",
+    "viewBox": "0 0 339.19925 284.874"
+  }
+]

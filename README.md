@@ -1,87 +1,63 @@
-# HarnessPAI Research Seminar
+# HarnessPAI Presentation
 
-A self-contained, offline Beamer-style HTML presentation: white paper, navy accents, a 16:9 canvas, section navigation, slide-level references, and English speaker notes. **27 main slides + 3 appendix slides**, intended for a 30–35 minute talk.
+An offline, 16:9 HTML presentation with **36 slides**: a cover, a roadmap, and four substantive parts. The cover retains the Xiaomi logo, project-homepage QR code, affiliation strip, and orange/gray title. Content slides use the existing navy academic style.
 
-## Open
+## Open and present
 
-Open `index.html` directly in a browser. No Node.js, build step, CDN, or internet connection is required. Keep the entire `slides` directory together when copying the presentation.
+Open `index.html` directly in a browser. Keep the directory and its `media` folder together. No build step, network connection, or CDN is required. The project-homepage link is external.
 
-For an optional local HTTP server, run from this directory:
-
-```sh
-python3 -m http.server 8000 --bind 127.0.0.1
-```
-
-Then visit `http://127.0.0.1:8000`.
-
-## Controls
-
-| Action | Shortcut |
+| Action | Control |
 | --- | --- |
-| Previous / next slide | `←` / `→`, `Page Up` / `Page Down`, Space |
-| First / last slide | `Home` / `End` |
-| Outline / jump to a slide | `O`, or enter a number in the toolbar |
-| Speaker notes | `N` |
-| Fullscreen | `F` |
-| Play / pause the current video | `V` on slides 5, 6, 7, and 13 |
-| Print / save PDF | `P` |
-| Keyboard help | `?` |
+| Previous / next slide | Arrow keys, Page Up / Down, Space |
+| First / last slide | Home / End |
+| Outline | O |
+| Speaker notes | N |
+| Fullscreen | F |
+| Play / pause video | V on slide 10 |
+| Print / save PDF | P |
+| Enlarge a paper figure | Click the figure, or focus it and press Enter |
+| Close a panel / enlarged figure | Escape |
 
-Horizontal swipes navigate on touchscreens. On narrow screens, toolbar actions use their shortcut letters. Notes include a manual start / pause / reset timer. Videos never autoplay and pause when leaving the slide.
+Use the slide-number input or the chapter buttons to jump. Horizontal swipes navigate on touchscreens. Notes include a manual timer. Videos pause when leaving their slide.
 
-Direct slide addresses:
+## Four-part structure
 
-- `#slide-13`: irreversible physical failures, with the added pot-handling video.
-- `#slide-15`: the two-timescale distinction.
-- `#slide-18`: the evolution loop.
-- `#slide-19`: the success contract and independent diagnosis.
+| Part | Pages | Content |
+| --- | --- | --- |
+| Background | 3–5 | Physical AI components; standard success versus perturbation robustness; post-training, code-as-policy, and VLA harness paradigms |
+| Motivation | 6–11 | Instruction and scene shifts; fine manipulation; persistent physical errors; pot-handling video; executable code |
+| Method | 12–20 | Architecture; two timescales; hybrid execution; optional initialization; code evolution; success contract; repair memory; trajectory feedback |
+| Experiments | 21–36 | Protocols; LIBERO, LIBERO-PRO, robosuite, RoboCasa, BEHAVIOR-1K, VacuSim, MicroDuck; DreamZero transfer; evolution dynamics; runtime; VLA and WAM data feedback; conclusions |
 
-## Talk structure
+Earlier appendix material is integrated into Method and Experiments. There is no fifth section. For a shorter talk, retain the main result on page 22 and the trajectory-learning evidence on pages 33–35, and selectively skip detailed embodiment results.
 
-1. **Background and observations (3–7):** action-centered models, standard-versus-perturbed performance, and language, scene, and contact examples.
-2. **Motivation and design choice (8–10):** retain atomic motor competence, add grounding and verification, and compare harness designs.
-3. **Framework and evolution (11–22):** architecture, pseudocode, irreversible physical failures, program-level open-loop execution, two timescales, gates, initialization, evolution, contracts, and reusable repair knowledge.
-4. **Evidence and takeaways (23–27):** main results, backbone transfer, data feedback, limitations, and summary.
-5. **Appendix (28–30):** protocols, serial runtime costs, and the full pipeline.
+## Paper figures and sources
 
-For a shorter talk, omit slides 7, 12, 17, 20, 24, and 25. Preserve slides 13, 15, 18, and 19 to explain the motivation and mechanism.
+Figures come directly from `../paper/images/framework` and `../paper/images/experiment`. PDF figures are converted with `pdftocairo -svg`; vector text and curves remain sharp when enlarged. `media/paper/sources.json` maps every displayed asset to its source PDF and records intentional panel crops.
 
-## The added irreversibility example
+The deck uses **25 vector assets on 25 figure slides**, including motivation, architecture, evolution, skill memory, benchmark results, transfer, runtime, and fine-tuning. Panel crops separately show optional initialization and main evolution in Figure 9, the embodiment strip of Figure 1, the HarnessPAI rollout row of Figure 5, and the timing/speedup panels of Figure 21.
 
-Slide 13 uses `media/irreversible-comparison.mp4` and its poster. A wrong physical action can persistently change the scene: a dropped or overturned object may be unrecoverable within the current rollout. Reasoning after such a failure may be too late.
+The tiny source line above the bottom information bar is removed on all pages. Sources remain in each slide’s `data-source` and appear only in speaker notes. The bottom bar retains `Darwin Agent Team`, the paper title, and the page number.
 
-The design response is **program-level open-loop execution**: execute a previously validated task program, ground targets and check conditions before risky transitions, then revise code between rollouts. This does **not** mean disabling sensors, feedback control, conditional branches, predefined recovery, or stopping. Irreversibility motivates prevention; it does not prove that open-loop control is universally safer.
+The affiliation strip is rendered from `../paper/LOGO.pdf`. The cover QR links to `https://darwin-agent.github.io/HarnessPAI/`.
 
-The source video is an illustration in **robosuite TwoArmLift**, played at 2× source speed. The left side is a scripted pot drop, with the pot lost below the table; the right side is a successful HarnessPAI lift. It is **not a pure-WAM baseline or a RoboCasa benchmark comparison**. The slide and speaker notes state this distinction explicitly.
+## Evidence and interpretation
 
-## PDF
+- Main harness evolution keeps action backends frozen. Model feedback is a separate supervised fine-tuning study using successful trajectories; the paper does not alternate model updates with harness re-evolution.
+- LIBERO / LIBERO-PRO evaluation includes 15 development seeds among 50 evaluated seeds. robosuite uses disjoint development and evaluation seeds.
+- BEHAVIOR-1K tests one program zero-shot, then adapts on failing evaluation seeds for eight rounds. Adapted scores are not zero-shot generalization scores.
+- DreamZero transfer and WAM fine-tuning cover LIBERO-Object only. RoboCasa covers 18 Atomic-Seen tasks.
+- Cross-paper baselines retain their own protocols. Comparisons to the same frozen backbone are the primary system-effect evidence.
+- Data feedback trains on seeds 0–39 and evaluates on held-out scene seeds 40–49. Per-suite VLA models select their best checkpoint within 15,000 steps; full-mixture VLA selects within 30,000 steps. DreamZero selects one shared checkpoint at 8,500 steps. Selection uses observed evaluation results.
+- The +38.8 pp result is full-mixture VLA training on nine equally sampled categories, rather than an average of separately trained suite models. Scores are copied from paper text rather than estimated from smoothed curves.
+- The pot video is a robosuite TwoArmLift illustration: a scripted drop versus a HarnessPAI lift, at 2× source playback. It is not a pure-WAM baseline or quantitative RoboCasa comparison.
+- Runtime uses Figure 21’s timing/speedup panels. Serial speedups are distinct from the seven-GPU configuration. Online high-level deliberation is removed, while evolution, perception, model inference, control, and execution still have costs.
 
-`HarnessPAI-lecture.pdf` is the exported English deck. After editing the HTML, regenerate it using **Export** or `P` and select **Save as PDF**.
+## Editing and PDF
 
-The stylesheet declares a 16:9 page with no margins. If the browser provides print options, select landscape, no margins, background graphics, and no browser headers or footers. All 30 slides print; videos become poster images. The toolbar, outline, speaker notes, and timer are excluded.
+- `index.html`: ordered `section.slide` elements, body content, and speaker notes.
+- `slides.css`: cover, academic layouts, responsive scaling, enlarged figures, and print styles.
+- `slides.js`: headers, exactly four chapter buttons, footers, outline, source notes, navigation, timer, video controls, and figure enlargement. Chapter starts and totals are derived from the slide DOM.
+- `HarnessPAI-lecture.pdf`: synchronized export of all 36 slides. After future edits, press P and save as PDF with landscape orientation, no margins or browser headers, and background graphics.
 
-## Sources and scope
-
-- Content is based on this repository’s `main.tex` and `chapters/*.tex`. Each slide includes a source line.
-- Figures and videos come from the user-supplied project website directory `C:\Users\wangxin113\文章\code_physical\网页\HarnessPAI`. Selected assets are copied into `media`; the source website and manuscript are unchanged.
-- `task-library.webp` is converted from `images/framework/task_library.pdf` in the manuscript.
-- `motivation-language`: different selected VLA and HarnessPAI episodes, at 2× source speed—not a strictly paired initial-state experiment.
-- `motivation-visual-swap`: the video swaps a plate and distractor bowl, at 2× source speed; the paper’s Fig. 5 swaps a plate and ramekin. The slide preserves this distinction.
-- `motivation-microwave-column2`: head-camera microwave comparison, at 1× source speed. Different source sampling and durations do not establish execution-speed differences.
-- Slides 12 and 20 contain teaching pseudocode, not actual APIs, commit histories, or deployable robot controllers.
-- Perturbation examples demonstrate behavioral brittleness; they do not independently establish training-induced loss of vision/language or a unique failure mechanism.
-- Main harness evolution freezes model weights. Trajectory-based supervised fine-tuning is a separate, one-way data-feedback study—not alternating model–harness co-evolution.
-- LIBERO / PRO evaluation includes 15 development seeds among 50 evaluated seeds. Development success is not identical to unseen-scene generalization.
-- DreamZero transfer covers LIBERO-Object only; the main RoboCasa result covers 18 Atomic-Seen tasks.
-- Gains are percentage points (pp), using the manuscript’s reported precision. The +38.8 pp result is three-suite mixture fine-tuning, not an average of separately fine-tuned suite models.
-
-## Editing
-
-- `index.html`: one `section.slide` per slide. `data-title`, `data-chapter`, and `data-source` define the heading, section, and reference. `aside.speaker-note` holds English presenter notes.
-- `slides.css`: presentation layout, responsive controls, and print styles.
-- `slides.js`: generated headers/footers, navigation, scaling, notes, videos, and the timer.
-- If slides are added or removed, update section-start indices in `slides.js`, roadmap page ranges, and documentation references. Video-page hints and total counts are generated automatically.
-
-## Validation
-
-The deck is checked with local Chromium for layout, offline assets, navigation, speaker notes, the timer, fullscreen, video playback, responsive scaling, touch navigation, and PDF output. Firefox, Safari, and a physical projector are not part of the local test environment.
+Validation covers every slide’s geometry, figures, four-part navigation, removed source rows, preserved footer labels, notes, figure enlargement, offline assets, responsive scaling, and PDF output in local Chromium.
