@@ -36,7 +36,7 @@ sub { font-size: .7em; }
 .frame-heading h2 { font-size: 29px; line-height: 1.35; font-weight: 650; color: var(--navy); margin: 0; letter-spacing: -.5px; }
 .frame-heading .section-label { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); margin: 0 0 3px; }
 .slide-body { flex: 1; min-height: 0; padding: 25px 52px 17px; display: flex; flex-direction: column; gap: 23px; font-size: 22px; line-height: 1.5; }
-.slide-footer { flex-shrink: 0; height: 28px; display: grid; grid-template-columns: 290px 1fr 136px; font-size: 11px; color: #fff; position: relative; }
+.slide-footer { flex-shrink: 0; height: 28px; display: grid; grid-template-columns: 180px minmax(0, 1fr) 180px; font-size: 11px; color: #fff; position: relative; }
 .slide-footer span { display: flex; align-items: center; padding: 0 20px; }
 .slide-footer span:first-child { background: var(--navy-dark); }
 .slide-footer span:nth-child(2) { background: var(--navy); justify-content: center; letter-spacing: .35px; }
@@ -432,6 +432,15 @@ video { display: block; width: 100%; background: #111; aspect-ratio: 1024 / 588;
 .motivation-split { grid-template-columns: 1.4fr .8fr; }
 .motivation-split blockquote { font-size: 26px; line-height: 1.55; color: var(--navy); font-family: var(--serif); }
 .motivation-split mark { background: #fff0df; color: #b44b0b; padding: 0 3px; }
+.motivation-video-split { grid-template-columns: 1.6fr .95fr; gap: 36px; }
+.motivation-video { min-width: 0; width: 100%; }
+.motivation-video .comparison-labels { margin-bottom: 7px; font-size: 16px; }
+.motivation-video video, .motivation-video .print-poster { width: 100%; aspect-ratio: 1024 / 588; object-fit: contain; }
+.pot-video video, .pot-video .print-poster { aspect-ratio: 704 / 428; }
+.motivation-video-split blockquote { font-family: var(--serif); font-size: 26px; line-height: 1.55; color: var(--navy); }
+.motivation-video-split mark { background: #fff0df; color: #b44b0b; padding: 0 3px; }
+.motivation-video-split .research-list { font-size: 21px; }
+.motivation-video-split .research-key { font-size: 24px; }
 .precision-figure img { height: 320px; }
 .irreversible-figure img { height: 290px; }
 .research-video video, .research-video .print-poster { width: 100%; max-height: 355px; object-fit: contain; background: #f6f8fb; }

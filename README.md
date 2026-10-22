@@ -13,7 +13,7 @@ Open `index.html` directly in a browser. Keep the directory and its `media` fold
 | Outline | O |
 | Speaker notes | N |
 | Fullscreen | F |
-| Play / pause video | V on slide 10 |
+| Play / pause video | V on slides 6, 7, and 10 |
 | Print / save PDF | P |
 | Enlarge a paper figure | Click the figure, or focus it and press Enter |
 | Close a panel / enlarged figure | Escape |
@@ -35,7 +35,9 @@ Earlier appendix material is integrated into Method and Experiments. There is no
 
 Figures come directly from `../paper/images/framework` and `../paper/images/experiment`. PDF figures are converted with `pdftocairo -svg`; vector text and curves remain sharp when enlarged. `media/paper/sources.json` maps every displayed asset to its source PDF and records intentional panel crops.
 
-The deck uses **25 vector assets on 25 figure slides**, including motivation, architecture, evolution, skill memory, benchmark results, transfer, runtime, and fine-tuning. Panel crops separately show optional initialization and main evolution in Figure 9, the embodiment strip of Figure 1, the HarnessPAI rollout row of Figure 5, and the timing/speedup panels of Figure 21.
+The deck uses **23 vector assets on 23 figure slides**, including motivation, architecture, evolution, skill memory, benchmark results, transfer, runtime, and fine-tuning. Page 11 uses the HarnessPAI panel of the paper’s adopted Figure 2, rather than the unused overview drawing. Other panel crops separately show optional initialization and main evolution in Figure 9, the embodiment strip of Figure 1, the HarnessPAI rollout row of Figure 5, and the timing/speedup panels of Figure 21.
+
+Motivation pages 6 and 7 use the project homepage’s complete 15-second instruction and scene perturbation videos from `../code/assets/videos`, replacing their static figures. The videos in `media` keep the source’s 2× playback; their `*-outcomes.webp` posters show the 7-second frame so the contrast is visible before playback and in print. The language clip compares selected episodes with different initial arrangements. The scene clip swaps a plate and distractor bowl; the paper’s static Figure 5 swaps a plate and ramekin. Notes preserve these distinctions. Videos require manual playback and print as posters.
 
 The tiny source line above the bottom information bar is removed on all pages. Sources remain in each slide’s `data-source` and appear only in speaker notes. The bottom bar retains `Darwin Agent Team`, the paper title, and the page number.
 
@@ -58,6 +60,6 @@ The affiliation strip is rendered from `../paper/LOGO.pdf`. The cover QR links t
 - `index.html`: ordered `section.slide` elements, body content, and speaker notes.
 - `slides.css`: cover, academic layouts, responsive scaling, enlarged figures, and print styles.
 - `slides.js`: headers, exactly four chapter buttons, footers, outline, source notes, navigation, timer, video controls, and figure enlargement. Chapter starts and totals are derived from the slide DOM.
-- `HarnessPAI-lecture.pdf`: synchronized export of all 36 slides. After future edits, press P and save as PDF with landscape orientation, no margins or browser headers, and background graphics.
+- To export all 36 slides, press P and save as PDF with landscape orientation, no margins or browser headers, and background graphics. Videos print as posters.
 
 Validation covers every slide’s geometry, figures, four-part navigation, removed source rows, preserved footer labels, notes, figure enlargement, offline assets, responsive scaling, and PDF output in local Chromium.
