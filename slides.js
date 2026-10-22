@@ -4,7 +4,6 @@
   const slides = Array.from(document.querySelectorAll(".slide"));
   const stage = document.getElementById("stage");
   const deck = document.getElementById("deck");
-  const pageInput = document.getElementById("page-number");
   const notesPanel = document.getElementById("notes-panel");
   const overviewDialog = document.getElementById("overview-dialog");
   const helpDialog = document.getElementById("help-dialog");
@@ -60,7 +59,12 @@
     slide.setAttribute("aria-roledescription", "slide");
     slide.setAttribute("aria-label", `${index + 1} / ${slides.length}: ${slide.dataset.title}`);
     const topline = makeElement("div", "topline");
-    topline.append(makeElement("span", "topline-brand", "HarnessPAI"));
+    const brand = makeElement("button", "topline-brand", "HarnessPAI");
+    brand.type = "button";
+    brand.title = "Go to Overview";
+    brand.setAttribute("aria-label", "Go to Overview");
+    brand.addEventListener("click", () => showSlide(chapters[0].start));
+    topline.append(brand);
     const chapterNav = makeElement("nav", "chapter-nav");
     chapterNav.setAttribute("aria-label", "Section navigation");
     chapters.slice(1).forEach((chapter, chapterOffset) => {
@@ -120,13 +124,9 @@
     document.getElementById("overview-grid").append(overviewItem);
   });
 
-  document.getElementById("page-total").textContent = `/ ${slides.length}`;
-  pageInput.max = String(slides.length);
-
   function resizeDeck() {
     const bounds = stage.getBoundingClientRect();
-    const margin = window.innerWidth < 600 ? 12 : 40;
-    const scale = Math.max(.1, Math.min((bounds.width - margin) / 1280, (bounds.height - margin) / 720));
+    const scale = Math.max(.1, Math.min(bounds.width / 1280, bounds.height / 720));
     deck.style.transform = `scale(${scale})`;
   }
 
@@ -157,9 +157,11 @@
       slide.setAttribute("aria-hidden", String(!isActive));
       if (!isActive) slide.querySelectorAll("video").forEach((video) => video.pause());
     });
-    pageInput.value = String(current + 1);
-    document.getElementById("previous").disabled = current === 0;
-    document.getElementById("next").disabled = current === slides.length - 1;
+    const activeVideo = slides[current].querySelector("video");
+    if (activeVideo) {
+      activeVideo.muted = true;
+      activeVideo.play().catch(() => {});
+    }
     document.querySelectorAll(".overview-item").forEach((button, buttonIndex) => {
       if (buttonIndex === current) button.setAttribute("aria-current", "page");
       else button.removeAttribute("aria-current");
@@ -180,7 +182,6 @@
     const shouldOpen = force ?? notesPanel.hidden;
     notesPanel.hidden = !shouldOpen;
     document.body.classList.toggle("notes-open", shouldOpen);
-    document.getElementById("notes-toggle").setAttribute("aria-pressed", String(shouldOpen));
     resizeDeck();
   }
 
@@ -238,14 +239,7 @@
     document.getElementById("timer-toggle").textContent = timerStartedAt === null ? "Start" : "Pause";
   }
 
-  document.getElementById("previous").addEventListener("click", () => showSlide(current - 1));
-  document.getElementById("next").addEventListener("click", () => showSlide(current + 1));
-  document.getElementById("overview-toggle").addEventListener("click", () => openDialog(overviewDialog));
-  document.getElementById("help-toggle").addEventListener("click", () => openDialog(helpDialog));
-  document.getElementById("notes-toggle").addEventListener("click", () => toggleNotes());
   document.getElementById("notes-close").addEventListener("click", () => toggleNotes(false));
-  document.getElementById("fullscreen-toggle").addEventListener("click", toggleFullscreen);
-  document.getElementById("print-button").addEventListener("click", printDeck);
   document.getElementById("timer-toggle").addEventListener("click", () => {
     if (timerStartedAt === null) timerStartedAt = Date.now();
     else { elapsed += Date.now() - timerStartedAt; timerStartedAt = null; }
@@ -255,10 +249,6 @@
     elapsed = 0;
     timerStartedAt = null;
     updateTimer();
-  });
-  pageInput.addEventListener("change", () => showSlide(Number(pageInput.value) - 1));
-  pageInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") { showSlide(Number(pageInput.value) - 1); pageInput.blur(); }
   });
   document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => button.closest("dialog").close()));
   document.querySelectorAll("dialog").forEach((dialog) => dialog.addEventListener("click", (event) => {
