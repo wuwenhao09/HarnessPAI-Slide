@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183459">
+  <meta name="description" content="HarnessPAI research seminar: action-model limitations, irreversible physical failures, code as a harness, and dual-timescale execution and evolution.">
+  <title>HarnessPAI · Beyond the Action Model</title>
+  <link rel="stylesheet" href="slides.css">
+  <script src="slides.js" defer></script>
+</head>
+<body>
+  <main class="stage" id="stage" aria-label="HarnessPAI research seminar">
+    <div class="deck" id="deck">
+
+      <section class="slide title-slide is-active" data-chapter="0" data-title="HarnessPAI: An Evolving Harness for Physical AI" data-source="Paper Abstract; §4.1–4.5 · Project homepage: https://darwin-agent.github.io/HarnessPAI/">
+        <div class="slide-body">
+          <div class="cover-branding"><img class="xiaomi-logo" src="media/xiaomi-logo.png" alt="Xiaomi"><a class="cover-homepage" href="https://darwin-agent.github.io/HarnessPAI/" target="_blank" rel="noopener noreferrer" aria-label="Open the HarnessPAI project homepage"><img src="media/project-homepage-qr.png" alt="QR code for the HarnessPAI project homepage"><span>Project homepage ↗</span></a></div>
+          <div class="cover-content"><h1><span class="cover-title-line"><span class="cover-accent">&lt;</span>Harness<span class="cover-accent">PAI</span>/<span class="cover-accent">&gt;</span>: An evolving</span><span class="cover-title-line">harness for physical AI</span></h1><p class="cover-summary">Evolving executable code integrates perception, reasoning, and action,<br>and feeds successful trajectories back into model training.</p></div>
+        </div>
+        <aside class="speaker-note"><p>Start with a contradiction rather than a leaderboard: the robot can grasp and transport objects, yet changing a sentence or moving a plate can make the task fail. What is missing?</p><p>The talk moves from observed failures to the motivation for a harness, then explains why code and two timescales are useful. Section 4 evaluates both the execution framework and the model improvements obtained by feeding successful trajectories back into supervised fine-tuning. Allow about 40–45 minutes for the main talk; the last three slides are discussion material.</p></aside>
+      </section>
+
+      <section class="slide agenda-slide" data-chapter="0" data-title="Roadmap: from capability gaps to an evolving system" data-source="Talk structure · Background / Motivation / Method & Evolution / Experiments & Data Feedback">
+        <div class="slide-body">
+          <div class="agenda">
+            <a href="#slide-3"><span class="agenda-number">01</span><div><h3>Background: an action model is not a complete agent</h3><p>Why do visual grounding and instruction following become bottlenecks?</p></div><span class="agenda-pages">03—07</span></a>
+            <a href="#slide-8"><span class="agenda-number">02</span><div><h3>Motivation: use existing motor skills in the right way</h3><p>What should a harness add while the action model stays frozen?</p></div><span class="agenda-pages">08—10</span></a>
+            <a href="#slide-11"><span class="agenda-number">03</span><div><h3>Method: code as a harness, evolving on two timescales</h3><p>Why stable execution? How do we verify, repair, and reuse programs?</p></div><span class="agenda-pages">11—22</span></a>
+            <a href="#slide-23"><span class="agenda-number">04</span><div><h3>Experiments: benchmark gains and data feedback</h3><p>How well does the harness work, and can its trajectories improve the model?</p></div><span class="agenda-pages">23—34</span></a>
+          </div>
+        </div>
+        <aside class="speaker-note"><p>First establish concrete failures rather than broadly saying that VLAs are weak. Then ask how to organize capabilities the model still possesses. The central design is a program that remains fixed during execution and improves between executions.</p><p>The new irreversibility video is slide 13. Preserve slides 13, 15, 18, and 19 in a short version: they explain the physical motivation, two timescales, evolution loop, and success contract.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="1" data-title="Physical AI needs more than action generation" data-source="Manuscript §1 Introduction; §3.1 Why Do VLA/WAM Models Need a Harness?">
+        <div class="slide-body">
+          <p class="lead">A complete physical agent must perceive, understand, and act.</p>
+          <div class="pipeline triad">
+            <div class="node"><span class="node-index">V</span><h3>Perceive & ground</h3><p>Where are the objects?<br>What has changed?</p><small>Current scene</small></div><span class="arrow">→</span>
+            <div class="node"><span class="node-index">L</span><h3>Understand & reason</h3><p>Which object is intended?<br>What constraints must hold?</p><small>Task semantics</small></div><span class="arrow">→</span>
+            <div class="node action-node"><span class="node-index">A</span><h3>Act & control</h3><p>How should the robot move?<br>How is contact handled?</p><small>Physical interaction</small></div>
+          </div>
+          <div class="two-col compact-gap"><div class="block"><h3>VLA · Vision-Language-Action</h3><p>Maps visual observations and instructions to actions.</p></div><div class="block"><h3>WAM · World Action Model</h3><p>Also models how the world evolves with actions.</p></div></div>
+          <div class="takeaway"><span>The gap</span>Action-centric training and evaluation do not automatically ensure reliable grounding or instruction following.</div>
+        </div>
+        <aside class="speaker-note"><p>VLA and WAM architectures differ. The common point here is an action-centered interface: being good at generating actions does not guarantee that the model can re-identify the correct goal in a changed scene.</p><p>Distinguish a behavioral robustness gap from a causal claim that training destroyed vision or language. The perturbation examples directly support the former; they do not isolate the training mechanism behind it.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="1" data-title="Near-perfect standard scores can hide brittle behavior" data-source="Manuscript §5.2 / Table 4 / LIBERO-PRO results · The paper’s own evaluations of π₀.₅">
+        <div class="slide-body two-col chart-layout">
+          <div><p class="eyebrow">SAME ACTION BACKBONE · π<sub>0.5</sub></p><h3 class="large-heading">High success is not<br>robust understanding.</h3><p>LIBERO-PRO perturbs familiar tasks to test whether a policy can re-ground its actions when layouts or instructions change.</p><div class="definition"><strong>Swap · scene perturbation</strong><p>Exchange initial object positions.</p><strong>Task · instruction perturbation</strong><p>Change the instruction and intended target.</p></div></div>
+          <div class="chart-panel"><p class="chart-title">Task success <span>Higher is better · %</span></p><div class="horizontal-chart"><div class="bar-row"><div class="bar-label">Standard LIBERO</div><div class="bar-track"><span style="--value:96.9" class="bar navy"></span><strong>96.9</strong></div></div><div class="bar-row"><div class="bar-label">PRO · Swap</div><div class="bar-track"><span style="--value:39.7" class="bar muted"></span><strong>39.7</strong></div></div><div class="bar-row"><div class="bar-label">PRO · Task</div><div class="bar-track"><span style="--value:30.1" class="bar muted"></span><strong>30.1</strong></div></div></div><p class="chart-note">Aggregated over Spatial, Object, and Goal suites.<br>A standard-versus-perturbed comparison, not a causal training ablation.</p></div>
+        </div>
+        <aside class="speaker-note"><p>Establish the contrast: 96.9% is the standard LIBERO mean across three suites. The same backbone reaches only 39.7% under position swaps and 30.1% under instruction changes.</p><p>This does not mean the model has no visual or language understanding at all. It means those capabilities do not reliably translate into correct behavior under these perturbations. The next two clips make the failures concrete.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="1" data-title="Language shift: one “not” changes which bowl to grasp" data-source="Manuscript §3.1 / Fig. 4; project clip: motivation-language · Different selected episodes; 2× source playback">
+        <div class="slide-body media-layout">
+          <div class="media-explanation"><span class="case-label">OBSERVATION 01</span><blockquote>Pick up the black bowl<br><mark>not between</mark><br>the plate and the ramekin.</blockquote><ul class="academic-list"><li>The added negation changes the target.</li><li>The VLA still grasps the original bowl.</li><li>The harness re-grounds the target before invoking motor skills.</li></ul><div class="mini-block">Grasping a bowl is not the same as<br><strong>grasping the right bowl.</strong></div></div>
+          <figure class="video-figure"><div class="comparison-labels"><span>Pure VLA · wrong target</span><span>HarnessPAI · correct target</span></div><video controls playsinline muted preload="none" poster="media/motivation-language.webp" aria-label="Language perturbation: pure VLA on the left, HarnessPAI on the right"><source src="media/motivation-language.mp4" type="video/mp4"></video><figcaption>Selected rollouts illustrate behavior; success rates are not inferred from this pair.<br>The manuscript also shows a masking intervention that does not resolve this case.</figcaption></figure>
+        </div>
+        <aside class="speaker-note"><p>Press V to play or pause. Ask the audience to read the instruction. The word “not” changes the referent, not the kinematic form of grasping.</p><p>The left clip is pure VLA episode 6; the right is HarnessPAI episode 9. Do not treat them as a strictly matched initial-state experiment. The masking result is in the paper’s static figure, not this video.</p><p>The mask intervention is insufficient in this case, but that alone does not isolate language understanding from visual grounding or the instruction-to-action mapping.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="1" data-title="Scene shift: the motion works, but the destination is stale" data-source="Manuscript §3.1 / Fig. 5; project clip: motivation-visual-swap · 2× source playback; initial-state equality unverified">
+        <div class="slide-body media-layout">
+          <div class="media-explanation"><span class="case-label">OBSERVATION 02</span><h3 class="large-heading">Same instruction.<br>A new destination.</h3><ul class="academic-list"><li>Grasping and transport still happen.</li><li>The VLA moves toward the plate’s old position.</li><li>The harness re-locates the destination in the current scene.</li></ul><div class="mini-block">Update <strong>where</strong> to act,<br>not just relearn <strong>how</strong> to move.</div></div>
+          <figure class="video-figure"><div class="comparison-labels"><span>Pure VLA · placement failure</span><span>HarnessPAI · re-grounded goal</span></div><video controls playsinline muted preload="none" poster="media/motivation-visual-swap.webp" aria-label="Scene perturbation: pure VLA fails placement while HarnessPAI succeeds"><source src="media/motivation-visual-swap.mp4" type="video/mp4"></video><figcaption>This clip swaps the plate and a distractor bowl; the paper’s static example swaps the plate and ramekin. They illustrate the same failure class, not the same rollout.</figcaption></figure>
+        </div>
+        <aside class="speaker-note"><p>Press V. The key is not a complete loss of motor ability: placement has not been re-anchored to the plate’s current location.</p><p>Keep the asset distinction explicit. The webpage video and the paper figure swap different objects, and exact initial-state equality across the paired videos was not verified.</p><p>Across both examples, short-horizon action capabilities remain useful, but selecting and organizing them is not reliable enough for task completion.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="1" data-title="The missing pieces: grounding, semantics, and verification" data-source="Manuscript §3.1 / Fig. 6; project clip: motivation-microwave-column2 · Illustrative rollouts do not isolate a unique cause">
+        <div class="slide-body">
+          <div class="two-col"><div><div class="observation-row"><span>01</span><div><h3>The wrong object</h3><p>A valid motion, but the wrong referent.</p></div></div><div class="observation-row"><span>02</span><div><h3>The wrong destination</h3><p>Grasp and transport succeed; grounding does not.</p></div></div><div class="observation-row"><span>03</span><div><h3>Near the button is not on the button</h3><p>Reaching the vicinity does not complete the press.</p></div></div></div><figure class="video-figure small-video"><div class="comparison-labels"><span>WAM · unsuccessful press</span><span>HarnessPAI · completed task</span></div><video controls playsinline muted preload="none" poster="media/motivation-microwave-column2.webp" aria-label="Microwave task: WAM on the left and HarnessPAI on the right"><source src="media/motivation-microwave-column2.mp4" type="video/mp4"></video><figcaption>RoboCasa · microwave button task · head-camera view</figcaption></figure></div>
+          <div class="takeaway"><span>Careful attribution</span>These examples motivate system-level support; they do not prove training-induced V/L loss or intrinsic imprecision of generative action heads.</div>
+        </div>
+        <aside class="speaker-note"><p>The WAM example broadens the story beyond VLAs. Failure to press the button may involve localization, contact control, or action generation; these examples do not establish a unique cause.</p><p>The design response is to make grounding, geometric reasoning, and execution checks explicit, while retaining useful action capabilities.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="2" data-title="Motivation: use existing motor competence in the right way" data-source="Manuscript §3.3 Why Use Code as a Physical AI Harness?; §6.2 When the Framework Works">
+        <div class="slide-body">
+          <div class="research-question"><span>RESEARCH QUESTION</span><p>If the model can still reach, grasp, and transport,<br>how do we make it act <em>correctly</em> after a perturbation?</p></div>
+          <div class="pipeline motivation-flow"><div class="node"><h3>Re-ground the goal</h3><p>Resolve the instruction<br>in the current scene</p></div><span class="arrow">→</span><div class="node"><h3>Invoke existing skills</h3><p>Retain the frozen model’s<br>atomic motor competence</p></div><span class="arrow">→</span><div class="node"><h3>Verify before advancing</h3><p>Check grasp and placement;<br>gate the next stage</p></div></div>
+          <div class="equation">Reliable behavior <span>=</span> Motor competence <span>+</span> Explicit organization</div>
+          <p class="scope-line">Precondition: useful primitives already exist. A harness cannot create a capability absent from both the model and available control APIs.</p>
+        </div>
+        <aside class="speaker-note"><p>“Unlocking” is not a mysterious prompting trick. It means establishing the correct target, invoking a competent primitive at the right stage, and checking its result.</p><p>If neither the model nor the control API can grasp an object, rearranging calls cannot manufacture a grasping capability. We will return to this boundary at the end.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="2" data-title="Harness design: why not an online agent or pure code?" data-source="Manuscript §1, §2 Related Work, §3.3 · Conceptual design comparison, not a controlled ablation">
+        <div class="slide-body">
+          <table class="academic-table choice-table"><thead><tr><th>Design</th><th>Who decides next?</th><th>Learned motor skills</th><th>Main trade-off</th></tr></thead><tbody><tr><td>Pure VLA / WAM</td><td>Action model</td><td>Retained</td><td>Grounding and checks often implicit</td></tr><tr><td>Online reasoning harness</td><td>High-level agent</td><td>Retained</td><td>Repeated online deliberation</td></tr><tr><td>Code as Policy</td><td>Program + control APIs</td><td>Not necessarily retained</td><td>Contact-rich control depends on APIs</td></tr><tr class="highlight-row"><td>Code as Harness</td><td>Validated task program</td><td>Replaceable primitives</td><td>Upfront evolution; repeated reuse</td></tr></tbody></table>
+          <div class="two-col compact-gap"><div class="block"><h3>Do not replace the action model</h3><p>Code organizes grounding and checks.<br>The model supplies learned manipulation.</p></div><div class="block"><h3>Do not rethink every step</h3><p>Reuse an executable strategy.<br>Move program revision between rollouts.</p></div></div>
+        </div>
+        <aside class="speaker-note"><p>This is a comparison of representative designs, not a claim that all code-as-policy systems exclude learning or that every online agent is inefficient.</p><p>HarnessPAI takes a hybrid position: keep learned manipulation, but avoid making each step depend on renewed high-level deliberation.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="2" data-title="Why code? It turns a strategy into executable knowledge" data-source="Manuscript §3.3 · Executable / inspectable / evolvable · Repeated deployment is the primary target regime">
+        <div class="slide-body">
+          <div class="three-col properties"><div class="property"><span class="property-number">01</span><h3>Executable</h3><p class="english-label">RUN THE STRATEGY</p><p>Connect perception, action calls, and branches—not just a plan in words.</p><code>observe → act → check</code></div><div class="property"><span class="property-number">02</span><h3>Inspectable</h3><p class="english-label">LOCATE THE FAILURE</p><p>Make object selection and stage transitions readable and editable.</p><code>if not grasped: stop</code></div><div class="property"><span class="property-number">03</span><h3>Evolvable</h3><p class="english-label">REPAIR AND REUSE</p><p>Map failures to nodes, revise their implementation, and re-validate.</p><code>failure → patch → test</code></div></div>
+          <div class="takeaway"><span>Deployment logic</span>Especially useful when a task is repeated: invest in getting a program right, then reuse it.</div>
+          <p class="scope-line">Reuse programs and repair knowledge—not an assumption of unlimited physical resets or guaranteed zero-shot success on every new task.</p>
+        </div>
+        <aside class="speaker-note"><p>Executability supports runtime, inspectability supports diagnosis, and evolvability supports improvement across rollouts. Together they enable the two-timescale design.</p><p>Repeated tasks amortize development effort, but repetition is not permission to fail carelessly in each deployment.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="3" data-title="Architecture: code connects memory, perception, and action" data-source="Manuscript §4.1 / Fig. 8 · Original framework figure from the supplied project assets">
+        <div class="slide-body">
+          <p class="lead">The action model is one <strong>primitive</strong> in the system—not the whole agent.</p>
+          <figure class="paper-figure framework-figure"><img src="media/framework.webp" alt="HarnessPAI architecture: task, skill and code memories connected to perception, control and model primitives"><figcaption>Task Memory · Structured Skill Memory · Executable Code Memory · Primitive Library</figcaption></figure>
+          <div class="three-col caption-grid"><div><strong>Task memory</strong><p>Is a reusable program already available?</p></div><div><strong>Skill + code memories</strong><p>How to repair; where the implementation lives.</p></div><div><strong>Primitive library</strong><p>Perception, control, VLA / WAM / PPO.</p></div></div>
+        </div>
+        <aside class="speaker-note"><p>Read left to right: retrieve an existing program when possible; otherwise retrieve relevant skills and enter evolution. Code coordinates execution, drawing on the three types of primitives on the right.</p><p>The learned model is not privileged at every stage. Code handles explicit geometry, while learned policies supply useful contact-rich behavior. A pure control API can also serve as a backend.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="3" data-title="What does it mean to wrap an action model in code?" data-source="Teaching pseudocode based on manuscript §4.1 · Not a real project API or deployable robot-control implementation">
+        <div class="slide-body code-layout">
+          <div class="code-window"><div class="code-title">task_program.py <span>Illustrative pseudocode</span></div><pre><code><span class="kw">def</span> <span class="fn">execute</span>(instruction, robot, action_model):
+    scene = <span class="fn">perceive</span>(robot.observe())
+    target = <span class="fn">ground</span>(instruction, scene)
+    destination = <span class="fn">locate_destination</span>(scene)
+
+    robot.<span class="fn">approach</span>(target.pose)
+    action_model.<span class="fn">grasp</span>(target)
+    <span class="kw">if not</span> <span class="fn">verify_grasp</span>(robot.observe()):
+        <span class="kw">return</span> <span class="fn">safe_stop</span>()
+
+    robot.<span class="fn">transport</span>(destination)
+    action_model.<span class="fn">place</span>(destination)
+    <span class="kw">return</span> <span class="fn">verify_goal</span>(robot.observe())</code></pre></div>
+          <div class="code-annotations"><div><span>GROUND</span><h3>Explicit objects and poses</h3><p>Resolve the task in the current scene.</p></div><div><span>DELEGATE</span><h3>Retain learned actions</h3><p>Freeze weights; do not hand-code all contact.</p></div><div><span>VERIFY</span><h3>Gate execution</h3><p>No verified grasp, no blind transition to transport.</p></div></div>
+        </div>
+        <aside class="speaker-note"><p>This illustrates interface boundaries, not a runnable robot API. The ground function stands for explicit perception calls, task predicates, and geometric reasoning; naming a function does not solve semantics.</p><p>The assignment of model-controlled stages varies by task. A function named safe_stop is not itself a safety guarantee: stopping must be implemented for the robot and its operating conditions.</p></aside>
+      </section>
+
+      <section class="slide irreversible-slide" data-chapter="3" data-title="Why open-loop execution? Some failures cannot be undone" data-source="Manuscript §3.2; supplied irreversible-comparison.mp4 · robosuite TwoArmLift illustration; 2× source playback">
+        <div class="slide-body">
+          <div class="two-col irreversible-layout"><div class="media-explanation"><span class="case-label">PHYSICAL ACTIONS CHANGE THE WORLD</span><h3 class="large-heading">There is no reliable<br>“undo” button.</h3><ul class="academic-list"><li>A bad grasp can drop or overturn an object.</li><li>After the scene changes, recovery may be impossible within the rollout.</li><li>Reasoning after failure may already be too late.</li></ul></div><figure class="video-figure irreversible-video"><div class="comparison-labels"><span>Illustrative failure · pot dropped</span><span>HarnessPAI · successful lift</span></div><video controls playsinline muted preload="none" poster="media/irreversible-comparison.webp" aria-label="Irreversible error illustration: a scripted pot drop on the left and a successful HarnessPAI two-arm lift on the right"><source src="media/irreversible-comparison.mp4" type="video/mp4"></video><figcaption>Left: a scripted drop; the pot is lost below the table. Right: successful lift.<br>This is an illustration, not a pure-WAM baseline or a RoboCasa comparison.</figcaption></figure></div>
+          <div class="takeaway"><span>Program-level open-loop</span>Run validated logic with pre-action checks. Keep sensor feedback; move code revision between rollouts, before the next risky execution.</div>
+        </div>
+        <aside class="speaker-note"><p>Press V. This clip gives the physical motivation for separating execution from program revision. Once a pot falls below the table, another reasoning step cannot simply restore the previous state. The failure is not universally irreversible under all possible interventions, but it can be unrecoverable within the task and its available controls.</p><p>Describe the source accurately: the left is an illustrative scripted drop in robosuite TwoArmLift; the right is a successful HarnessPAI lift. This is not evidence that a particular WAM failed in RoboCasa, nor a quantitative success-rate comparison.</p><p>Why call the response open-loop? At the program level, the validated task logic stays fixed during a rollout. It still reads sensors, checks grasps, uses feedback control, and may run predefined recovery or stop. Irreversibility motivates preventive checks and first-attempt reliability; it does not prove open-loop control is universally safer.</p><p>Programs improve between trials in a resettable development environment. Do not assume that the same resets are available in real deployment.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="3" data-title="Prevent errors now; improve the program before the next run" data-source="Manuscript §3.2 Why Open-Loop Execution? · Conceptual state-transition illustration">
+        <div class="slide-body">
+          <p class="lead">A physical mistake cannot always be fixed by undoing a line of code.</p>
+          <div class="pipeline consequence-flow"><div class="node"><span class="step-tag">WRONG DECISION</span><h3>Bad grasp / collision</h3></div><span class="arrow">→</span><div class="node"><span class="step-tag">PERSISTENT CHANGE</span><h3>Object falls or spills</h3></div><span class="arrow">→</span><div class="node warning-node"><span class="step-tag">RECOVERY COST</span><h3>The rollout may be lost</h3></div></div>
+          <div class="two-col"><div class="block"><h3>During this run: prevent the error</h3><ul class="academic-list"><li>Ground targets and geometric constraints.</li><li>Gate progress with predefined checks.</li><li>Recover or stop within defined policies.</li></ul></div><div class="block"><h3>Before the next: repair the program</h3><ul class="academic-list"><li>Locate weak nodes from execution evidence.</li><li>Validate fixes in resettable experiments.</li><li>Deploy only a validated candidate.</li></ul></div></div>
+          <div class="takeaway"><span>Objective</span>Improve first-attempt reliability, rather than rely on unlimited physical retries.</div>
+        </div>
+        <aside class="speaker-note"><p>Follow the video with the design principle. A stable, inspectable program provides explicit checks before committing to risky stages. High-level code revisions occur between runs.</p><p>This is program-level open-loop execution, not sensor-level open-loop control. The claim is not that removing feedback prevents accidents. The combination of explicit grounding, checks, and validated programs aims to reduce error risk.</p><p>Evolution uses resettable experimental environments. A real robot may not be able to reset, and the program is not a formal safety proof.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="3" data-title="Two timescales: execute a fixed program; evolve between runs" data-source="Manuscript §3.2, §4.1–4.3 · “Open-loop” refers to the program, not sensors or low-level feedback control">
+        <div class="slide-body timescales">
+          <div class="timescale-row fast"><div class="timescale-label"><span>TIMESCALE ① · WITHIN</span><h3>One rollout</h3><strong>Program P<sub>k</sub> is fixed</strong></div><div class="timescale-content"><div class="inline-flow"><span>Observe</span><b>→</b><span>Ground</span><b>→</b><span>Act</span><b>→</b><span>Check</span></div><div class="feedback-line">↖ Read current observations; follow predefined branches, recovery, or stopping rules ↙</div><p>No online program rewriting. Perception and low-level feedback remain active.</p></div></div>
+          <div class="timescale-row slow"><div class="timescale-label"><span>TIMESCALE ② · ACROSS</span><h3>Between rollouts</h3><strong>P<sub>k</sub> → P<sub>k+1</sub></strong></div><div class="timescale-content"><div class="inline-flow"><span>Evidence</span><b>→</b><span>Diagnose</span><b>→</b><span>Revise</span><b>→</b><span>Validate</span></div><div class="feedback-line">↖ Repair failures; promote a candidate only after it passes the success contract ↙</div><p>Code and repair knowledge evolve; action-model parameters θ stay frozen.</p></div></div>
+          <div class="takeaway"><span>Key distinction</span>Program-level open-loop ≠ blind action replay. Cross-rollout evolution ≠ continuous online LLM replanning.</div>
+        </div>
+        <aside class="speaker-note"><p>This is the central technical distinction. Within a rollout, what is fixed is the program—not action values or sensor inputs, and not the outcome of conditional branches. A fixed program can implement feedback control using fresh observations.</p><p>Across rollouts, execution evidence changes the program from Pk to Pk+1. These are logical timescales—execution versus improvement—not specific millisecond or second sampling rates.</p><p>Action parameters remain frozen in the main evolution loop. The later fine-tuning study is a separate data-feedback experiment.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="3" data-title="Execution: checks gate the next step, not just the final score" data-source="Manuscript §4.1; §4.3 / Table 3 hybrid rollout · Stage allocation is illustrative and depends on task and capability">
+        <div class="slide-body">
+          <div class="phase-flow"><div><span class="phase-owner">Perception + geometry</span><h3>Ground</h3><p>Targets and poses</p></div><b>→</b><div><span class="phase-owner">Control code</span><h3>Approach</h3><p>Reach the object</p></div><b>→</b><div class="learned-phase"><span class="phase-owner">Learned model</span><h3>Grasp</h3><p>Establish contact</p></div><b>→</b><div><span class="phase-owner">Control code</span><h3>Transport</h3><p>Move geometrically</p></div><b>→</b><div class="learned-phase"><span class="phase-owner">Learned model</span><h3>Place</h3><p>Complete placement</p></div></div>
+          <div class="gate-explainer"><div class="gate-symbol">✓<span>CHECK</span></div><div><h3>Transport only after verify_grasp succeeds</h3><p>Failed check → predefined recovery or stopping.<br>Not an invitation for the high-level LLM to rewrite the program mid-run.</p></div></div>
+          <div class="two-col compact-gap"><div class="mini-block"><strong>What code contributes</strong><p>Explicit constraints, geometry, control, and checks.</p></div><div class="mini-block"><strong>What the action model contributes</strong><p>Learned manipulation where atomic skills are useful.</p></div></div>
+        </div>
+        <aside class="speaker-note"><p>A closed gripper does not prove that an object was grasped. Read state or visual evidence before committing to transport. The check changes control flow instead of merely reporting a failure after the entire task.</p><p>This makes the open-loop terminology precise: the program is fixed, but its execution remains observation-dependent.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="3" data-title="Before evolution: define the task and build an editable skeleton" data-source="Manuscript §4.2 Closed-Loop Evolution · All three initialization stages below are optional">
+        <div class="slide-body">
+          <div class="input-strip"><span>Task description</span><span>Environment & interfaces</span><span>Success contract C</span><span>Budget T</span></div>
+          <div class="three-col preparation"><div class="block"><span class="optional-tag">OPTIONAL 01</span><h3>Extract a task graph</h3><p>Recover stage order from successful video or a related task.</p><code>approach → grasp → place</code></div><div class="block"><span class="optional-tag">OPTIONAL 02</span><h3>Assess model capability</h3><p>Observe each node and decide where code should help.</p><code>good / needs code / mixed</code></div><div class="block"><span class="optional-tag">OPTIONAL 03</span><h3>Initialize perception</h3><p>Organize SAM / Molmo and other primitives as the task needs.</p><code>scene → grounded targets</code></div></div>
+          <div class="merge-arrow">↓</div><div class="skeleton-box"><strong>Candidate program P₀</strong><span>With a graph: modularize by node. Without one: a single-file program can suffice.</span></div>
+          <p class="scope-line">A full human expert trajectory is not required. The graph supplies stage structure; every configuration enters the same execution–diagnosis–repair loop.</p>
+        </div>
+        <aside class="speaker-note"><p>All three stages are optional. Do not present an expert video, a VLA, or a complex graph as universal prerequisites. A pure-API task can start directly from code and feedback.</p><p>Capability assessment allocates work: retain stages the model does well and repair or take over weaker ones. Fix the success contract first so that evaluation criteria do not drift during evolution.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="3" data-title="Evolution: writing code is only the start of validation" data-source="Manuscript §4.3 / Algorithm 1 · Probe the previous round’s 3 failing seeds, then run the full development batch">
+        <div class="slide-body">
+          <div class="evolution-grid"><div class="evolution-step"><span>01</span><h3>Generate / repair</h3><p>Edit an isolated candidate;<br>protect validated programs.</p></div><div class="evolution-step"><span>02</span><h3>Pre-flight</h3><p>Check interfaces and execution;<br>separate bugs from policy failures.</p></div><div class="evolution-step"><span>03</span><h3>Targeted probe</h3><p>Recheck 3 previously failing seeds;<br>test the intended repair first.</p></div><div class="evolution-step"><span>04</span><h3>Full regression batch</h3><p>Run every contracted suite / episode;<br>look for new and recurring failures.</p></div><div class="evolution-step"><span>05</span><h3>Diagnose + gate</h3><p>Use node-wise video diagnosis;<br>apply authoritative success criteria.</p></div><div class="evolution-step"><span>06</span><h3>Synthesize the next step</h3><p>Failed: revise again.<br>Passed: promote code; distill skills.</p></div></div>
+          <div class="loop-bottom"><span>↻ Failure → retrieve relevant skills → return to 01</span><strong>✓ Full pass → Promote + Distill</strong></div>
+          <p class="scope-line">Stop when all contracted development rollouts pass or the budget is exhausted. Failed candidates retain diagnostics but do not enter the verified code library.</p>
+        </div>
+        <aside class="speaker-note"><p>Distinguish the targeted probe from full regression. Three failures cheaply test a repair direction, but the candidate must subsequently run across the full scope to detect damage to previously successful cases.</p><p>Convergence is not guaranteed. Exhausting the budget also ends the loop, but a failed candidate does not overwrite the verified library. “All pass” means all contracted development runs, not every possible real-world situation.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="3" data-title="Who decides success? The code writer should not grade itself" data-source="Manuscript §4.3 · Success contract, independent video diagnosis, deterministic gate, and candidate isolation">
+        <div class="slide-body">
+          <div class="contract-box"><div><span class="eyebrow">SUCCESS CONTRACT · FIXED BEFORE EVOLUTION</span><h3>C = scope + authoritative goal + terminal state + non-success signals</h3></div><p>The writer, diagnoser, and reviewer all receive the same contract.</p></div>
+          <div class="three-col verdict-grid"><div class="block"><h3>Code writer</h3><p>Repairs the candidate and<br>synthesizes the next revision.</p><span class="role-tag">Proposes a solution</span></div><div class="block"><h3>Independent video diagnoser</h3><p>Explains where failures occur<br>relative to workflow nodes.</p><span class="role-tag">Diagnostic evidence, not a guarantee</span></div><div class="block"><h3>Deterministic gate</h3><p>Checks the authoritative goal<br>over the contracted scope.</p><span class="role-tag">Controls promotion</span></div></div>
+          <div class="not-success"><span>Clean exit</span><b>≠</b><span>Program terminal state</span><b>≠</b><span>High dense reward</span><b>≠</b><strong>Task success</strong></div>
+        </div>
+        <aside class="speaker-note"><p>Model-based diagnosis can be wrong. Separate explanatory feedback from the authoritative signal that decides whether a candidate is accepted.</p><p>A crash-free run or an internal “done” state does not prove physical success. The writer should not declare victory by changing its own success criterion.</p><p>This is an evaluation and engineering safeguard, not a formal proof of safety or correctness.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="3" data-title="Turn one failure into a verifiable repair at a specific node" data-source="Teaching example based on manuscript §4.3–4.4 · Not an actual commit history; no invented success rates">
+        <div class="slide-body">
+          <div class="repair-heading"><span class="case-label">EXAMPLE · PLACE NODE</span><h3>Observed failure: a grasped object moves toward the plate’s old position.</h3></div>
+          <div class="three-col repair-cards"><div class="repair-card"><span class="repair-state bad">LOCALIZE</span><h3>P₀ · stale destination</h3><pre><code>destination = stored_pose&#10;place(destination)</code></pre><p>Locate the problem in grounding and placement—not “the action model is bad.”</p></div><div class="repair-card"><span class="repair-state">REPAIR</span><h3>P₁ · re-ground the scene</h3><pre><code>scene = observe()&#10;destination = locate_plate(scene)</code></pre><p>Add perception and geometry while retaining useful action primitives.</p></div><div class="repair-card"><span class="repair-state good">VERIFY & RETAIN</span><h3>P₂ · check the final relation</h3><pre><code>place(destination)&#10;verify_object_on_plate()</code></pre><p>Recheck failures, run full regression, then promote only if validated.</p></div></div>
+          <div class="takeaway"><span>Skill record</span>Problem: stale goal → Repair: re-ground + verify placement → Reference: maintained code.</div>
+        </div>
+        <aside class="speaker-note"><p>This is a teaching example, not the paper’s actual sequence of code revisions. It does not imply that two edits always suffice.</p><p>Map a whole-video failure to a specific stage, repair the missing function, and validate against the same contract. A useful skill says when the repair applies, what to change, and where the implementation lives—not merely “be careful next time.”</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="3" data-title="Remember both how to execute and how to repair" data-source="Manuscript §4.4 Skill Library / Fig. 10 · Figure converted from the local manuscript PDF">
+        <div class="slide-body memory-layout"><div><div class="block"><h3>Code library · executable knowledge</h3><p>Validated task programs, control logic, and maintained repair implementations.</p></div><div class="block"><h3>Skill library · repair experience</h3><p><strong>Problem → Repair → Code reference</strong></p><p>Index skills by grasp / transport / place nodes, not just a flat collection of notes.</p></div><div class="mini-block">A new task need not start from scratch:<br><strong>retrieve by node, reuse the repair.</strong></div></div><figure class="paper-figure memory-figure"><img src="media/task-library.webp" alt="Node-centric skill organization: task-graph nodes collect problem–repair notes and reference the executable code library"><figcaption>Node-level repairs transfer.<br>An entire new task program is not necessarily reusable unchanged.</figcaption></figure></div>
+        <aside class="speaker-note"><p>A grasp node may collect repairs for empty grasps, slipping, and misalignment. Another task that requires grasping can retrieve these experiences by the shared node.</p><p>Keep executable implementations in the code library and reference them from skill notes, rather than copying stale code fragments. Program reuse and repair-knowledge reuse are complementary.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="3" data-title="Evolution is not always monotonic; prior skills shorten search" data-source="Manuscript §5.4 / Fig. 19 · 3 representative tasks; each round aggregates 30 development runs: seeds 0–14 × Swap / Task">
+        <div class="slide-body">
+          <figure class="paper-figure evolution-figure"><img src="media/evolution.webp" alt="Evolution curves for three tasks: no-skill search jumps, oscillates or improves gradually; with skills, all three reach development success of 100% within two rounds"><figcaption>Original paper figure · Blue: no-skill · Orange: with-skill · x: evolution round · y: success rate</figcaption></figure>
+          <div class="three-col caption-grid"><div><strong>Task 0 · bottleneck removed</strong><p>A sharp gain after resolving a blocking error.</p></div><div><strong>Task 1 · oscillating search</strong><p>Edits can introduce regressions.</p></div><div><strong>Task 5 · cumulative repair</strong><p>Local corrections build on one another.</p></div></div>
+          <div class="takeaway"><span>Evidence</span>With skills, these three tasks reach 100% development success within two rounds—not a universal convergence guarantee.</div>
+        </div>
+        <aside class="speaker-note"><p>Do not present evolution as a smooth, monotonic process. The no-skill curves show a breakthrough, oscillation, and gradual accumulation. The skill library reduces repeated discovery of basic repairs.</p><p>These are development-seed curves, not a demonstration of 100% success on entirely unseen scenes.</p></aside>
+      </section>
+
+      <section class="slide experiment-overview" data-chapter="4" data-title="Experiments: execution quality and model improvement" data-source="Paper §5.1 Experimental Setup; §4.5 Model Feedback; §5.6 Harness Trajectories for Post-Training">
+        <div class="slide-body">
+          <div class="experiment-questions"><div><span>EXECUTION · FROZEN BACKENDS</span><p>Can evolving code improve task performance?</p></div><div><span>DATA FEEDBACK · SUPERVISED FINE-TUNING</span><p>Can successful rollouts improve model weights?</p></div></div>
+          <table class="academic-table benchmark-scope"><thead><tr><th>Benchmark / setting</th><th>Embodiment & backend</th><th>Reported evaluation</th></tr></thead><tbody>
+            <tr><td>robosuite</td><td>Single / dual arms · GraspNet</td><td>7 tasks × 100 evaluation seeds</td></tr>
+            <tr><td>LIBERO / LIBERO-PRO</td><td>Desktop arm · π<sub>0.5</sub> VLA</td><td>30 base / 60 perturbed tasks × 50 seeds</td></tr>
+            <tr><td>RoboCasa · Atomic-Seen</td><td>Mobile manipulator · WorldDreamer WAM</td><td>18 tasks × 20 seeds</td></tr>
+            <tr><td>BEHAVIOR-1K</td><td>Humanoid upper body + mobile base · GraspNet</td><td>2 household tasks × 25 evaluation seeds</td></tr>
+            <tr><td>VacuSim / MicroDuck</td><td>Robot vacuum · control API / legged robot · PPO</td><td>Floor coverage / lateral error & goal distance</td></tr>
+          </tbody></table>
+          <div class="takeaway"><span>Section 4</span>Benchmark results → harness transfer → successful trajectories → stronger VLA / WAM models</div>
+        </div>
+        <aside class="speaker-note"><p>The experiment section has two distinct questions. The main benchmark study evolves the harness while keeping all action backends frozen. The post-training study then uses successful harness trajectories as supervised demonstrations and evaluates the action model after its weights are updated.</p><p>The paper covers seven settings when LIBERO, LIBERO-PRO, VacuSim, and MicroDuck are counted separately, spanning four broad embodiment categories and five interface categories. This overview groups related settings for readability. DreamZero is additionally tested for zero-shot harness transfer and WAM fine-tuning on LIBERO-Object.</p><p>LIBERO / PRO evaluation includes development seeds 0–14 among seeds 0–49. robosuite uses disjoint development seeds 101–125 and evaluation seeds 1–100. Post-training uses training seeds 0–39 and held-out evaluation seeds 40–49. These protocols answer different questions.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="4" data-title="Main results: improve success without retraining the backbone" data-source="Paper §5.2.3 / Table 7; §5.2.4 / Table 5 · Gains are percentage points (pp)">
+        <div class="slide-body">
+          <div class="two-col results-grid"><div class="result-card"><p class="eyebrow">LIBERO-PRO · π₀.₅</p><div class="result-gain">+61.6 <small>pp</small></div><div class="result-pair"><div><span>Pure action model</span><strong>34.9<small>%</small></strong></div><b>→</b><div><span>+ HarnessPAI</span><strong>96.5<small>%</small></strong></div></div><p>3 suites × 2 perturbations · 60 tasks<br>Backbone and harness evaluated by the authors</p></div><div class="result-card"><p class="eyebrow">ROBOCASA · WORLDDREAMER</p><div class="result-gain">+27.2 <small>pp</small></div><div class="result-pair"><div><span>Pure action model</span><strong>65.0<small>%</small></strong></div><b>→</b><div><span>+ HarnessPAI</span><strong>92.2<small>%</small></strong></div></div><p>Atomic-Seen · 18 tasks<br>Same WorldDreamer; unified evaluation setting</p></div></div>
+          <div class="protocol-note"><strong>Protocol matters:</strong> LIBERO-PRO’s 50 evaluation seeds include the 15 evolution seeds. RoboCasa uses a fixed layout with 20 seeds per task; obstacles and distractors vary.</div>
+        </div>
+        <aside class="speaker-note"><p>The pure π0.5 average of 34.9% averages 39.7% on Swap and 30.1% on Task. Keep the paper’s reported overall harness value of 96.5%. The 61.6-point gain is not a 61.6% relative increase.</p><p>Prioritize comparisons to the same frozen backbone. Do not turn cross-paper leaderboards into controlled ablations, and disclose that LIBERO-PRO evaluation overlaps with development seeds.</p></aside>
+      </section>
+
+      <section class="slide benchmark-detail" data-chapter="4" data-title="LIBERO-PRO: robust across scene and instruction shifts" data-source="Paper §5.2.3 / Fig. 13; Appendix A / Table 7 · Task success, % · Prior baselines retain their original protocols">
+        <div class="slide-body">
+          <p class="lead">The same evolved task program serves Base, Swap, and Task conditions.</p>
+          <table class="academic-table pro-table"><thead><tr><th rowspan="2">Method</th><th colspan="2">Object</th><th colspan="2">Goal</th><th colspan="2">Spatial</th><th rowspan="2">Mean</th></tr><tr><th>Swap</th><th>Task</th><th>Swap</th><th>Task</th><th>Swap</th><th>Task</th></tr></thead><tbody>
+            <tr><td>π<sub>0.5</sub> · frozen VLA</td><td>29.8</td><td>10.8</td><td>37.6</td><td>29.0</td><td>51.8</td><td>50.6</td><td>34.9</td></tr>
+            <tr><td>ASPIRE</td><td>98.0</td><td>95.0</td><td>81.0</td><td>45.0</td><td>51.0</td><td>60.0</td><td>71.7</td></tr>
+            <tr><td>Harness VLA · CC</td><td>90.0</td><td>88.0</td><td>87.0</td><td>87.0</td><td>80.0</td><td>94.0</td><td>87.7</td></tr>
+            <tr class="ours-row"><td>HarnessPAI · π<sub>0.5</sub></td><td>98.6</td><td>99.2</td><td>94.6</td><td>97.8</td><td>93.8</td><td>95.2</td><td>96.5</td></tr>
+          </tbody></table>
+          <div class="benchmark-highlights"><div><strong>+61.6 <small>pp</small></strong><span>vs. the same frozen π<sub>0.5</sub></span></div><div><strong>+8.8 <small>pp</small></strong><span>vs. the strongest reported harness baseline</span></div><div><strong>98.1<small>%</small></strong><span>Standard LIBERO · 96.9% for π<sub>0.5</sub></span></div></div>
+          <p class="scope-line">50 seeds per task, including 15 evolution seeds. Harness VLA uses 10 seeds per task; the comparison to prior harnesses is across reported protocols.</p>
+        </div>
+        <aside class="speaker-note"><p>Swap exchanges object positions; Task changes the instruction and intended target. The harness remains above 93% in all six suite / perturbation combinations, whereas the pure VLA ranges from 10.8% to 51.8%.</p><p>All table values are copied from Appendix A, Table 7. Its ASPIRE mean is 71.7%, while the main text rounds it to 72%. HarnessPAI’s overall 96.5% preserves the paper’s reported precision. The strongest prior harness in that table is Harness VLA CC at 87.7%, a difference of 8.8 percentage points.</p><p>Standard LIBERO reaches 98.1% with HarnessPAI, versus 96.9% for the same π0.5 checkpoint. The larger gain under perturbations is the substantive result. The 50 evaluation seeds include 15 development seeds; a high overall score does not establish performance on wholly unseen scenes. Prior harness results use different seed protocols.</p></aside>
+      </section>
+
+      <section class="slide benchmark-detail" data-chapter="4" data-title="robosuite: the largest gains are in geometric manipulation" data-source="Paper §5.2.1 / Fig. 12; Appendix A / Table 6 · Task success, % · Prior baselines are from the ASPIRE paper">
+        <div class="slide-body">
+          <table class="academic-table robosuite-table"><thead><tr><th>Method</th><th>2A-Hand</th><th>2A-Lift</th><th>Insert</th><th>Lift</th><th>Stack</th><th>Restack</th><th>Wipe</th><th>Mean</th></tr></thead><tbody>
+            <tr><td>CaP-Agent0</td><td>20</td><td>74</td><td>0</td><td>97</td><td>98</td><td>89</td><td>100</td><td>68.3</td></tr>
+            <tr><td>Human</td><td>91</td><td>94</td><td>80</td><td>93</td><td>73</td><td>47</td><td>100</td><td>82.6</td></tr>
+            <tr><td>ASPIRE</td><td>92</td><td>71</td><td>9</td><td>97</td><td>99</td><td>100</td><td>99</td><td>81.0</td></tr>
+            <tr class="ours-row"><td>HarnessPAI</td><td>100</td><td>91</td><td>83</td><td>100</td><td>100</td><td>100</td><td>100</td><td>96.3</td></tr>
+          </tbody></table>
+          <div class="geometry-results"><div><p class="eyebrow">FINE INSERTION · INSERT</p><strong>9% <span>→</span> 83%</strong><p>+74 pp over ASPIRE on precise alignment</p></div><div><p class="eyebrow">BIMANUAL LIFT · 2A-LIFT</p><strong>71% <span>→</span> 91%</strong><p>+20 pp over ASPIRE on two-arm coordination</p></div></div>
+          <div class="takeaway"><span>Execution evidence</span>96.3% mean success; five of seven tasks reach 100%. Code evolution addresses geometric bottlenecks.</div>
+          <p class="scope-line">One program per task; evolution on seeds 101–125, evaluation on disjoint seeds 1–100. GraspNet supplies the grasp primitive.</p>
+        </div>
+        <aside class="speaker-note"><p>Unlike LIBERO / PRO, robosuite uses disjoint development and evaluation seeds. HarnessPAI evolves one program per task on 25 development seeds and applies it to 100 evaluation seeds.</p><p>The result is strongest on Insert: 83% against ASPIRE’s 9%, CaP-Agent0’s 0%, and the reported human baseline’s 80%. For two-arm Lift, HarnessPAI reaches 91%, versus ASPIRE’s 71%; the human baseline is 94%. Avoid describing HarnessPAI as superior on every metric. The aggregate improves by 15.3 points over ASPIRE, and five tasks reach 100%.</p><p>Prior baselines are reported by ASPIRE; these are benchmark comparisons, not a controlled ablation isolating the contribution of each HarnessPAI component.</p></aside>
+      </section>
+
+      <section class="slide benchmark-detail" data-chapter="4" data-title="Portability: mobile manipulation, cleaning, and walking" data-source="Paper §5.2.5–5.2.7 / Figs. 14–17 · Success, coverage, and drift use different metrics">
+        <div class="slide-body">
+          <table class="academic-table portability-table"><thead><tr><th>Setting</th><th>Metric / comparison</th><th>Reported result</th></tr></thead><tbody>
+            <tr><td>BEHAVIOR-1K · radio</td><td>Task completion: zero-shot → adapted</td><td><strong>84% → 100%</strong><small>Navigation: 100%</small></td></tr>
+            <tr><td>BEHAVIOR-1K · soda can</td><td>Task completion: zero-shot → adapted</td><td><strong>72% → 92%</strong><small>Navigation: 92%</small></td></tr>
+            <tr><td>VacuSim · furnished 25 × 25</td><td>Floor coverage: initial → evolved policy</td><td><strong>11.72% → 53.92%</strong></td></tr>
+            <tr><td>VacuSim · unfurnished 40 × 40</td><td>Floor coverage: initial → evolved policy</td><td><strong>4.90% → 63.76%</strong></td></tr>
+            <tr><td>MicroDuck · straight-line walking</td><td>Lateral drift over 4 m of forward progress</td><td><strong>Up to 0.8 m → near zero</strong></td></tr>
+          </tbody></table>
+          <div class="takeaway"><span>Across interfaces</span>The framework organizes grasp detection, a control API, and a PPO policy as frozen primitives.</div>
+          <p class="scope-line">BEHAVIOR adaptation uses eight rounds on previously failing test seeds. Coverage is specific to each VacuSim map; MicroDuck reports trajectory error.</p>
+        </div>
+        <aside class="speaker-note"><p>These results test portability beyond the desktop VLA setting. BEHAVIOR uses a humanoid upper body on a mobile base with GraspNet. VacuSim uses velocity commands and read-only sensor feedback. MicroDuck wraps an unchanged PPO Walker policy.</p><p>For BEHAVIOR, the zero-shot program is evolved on seeds 26–35 and tested on seeds 1–25. The adapted variant then re-evolves on failing test seeds for eight rounds. Its completion rate reaches its navigation rate, removing the navigation-to-completion gap in this evaluated set. Adapted scores are not zero-shot generalization results.</p><p>VacuSim compares initial and evolved coverage on each map, rather than binary task success. The paper’s Fig. 16 reports 11.72% for the furnished map’s initial coverage; Fig. 15 rounds this to 11.7%. MicroDuck’s drift is reduced by measuring heading error and steering the same Walker policy, without retraining.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="4" data-title="Backbone transfer: swap in DreamZero without re-evolution" data-source="Paper §5.3 Harness Zero-shot / Fig. 18 · LIBERO-Object Swap / Task only">
+        <div class="slide-body">
+          <div class="transfer-strip"><div><span>During evolution</span><strong>Code + π<sub>0.5</sub></strong></div><b>→</b><div class="transfer-center">Keep code, perception, geometry, and checks<br><strong>Replace only the action-model calls</strong></div><b>→</b><div><span>During transfer</span><strong>Code + DreamZero</strong></div></div>
+          <table class="academic-table transfer-table"><thead><tr><th>LIBERO-Object perturbation</th><th>Original DreamZero</th><th>Zero-shot harness transfer</th></tr></thead><tbody><tr><td>Swap</td><td>0.6%</td><td class="strong-value">73.4%</td></tr><tr><td>Task</td><td>9.6%</td><td class="strong-value">84.4%</td></tr></tbody></table>
+          <div class="takeaway"><span>Implication</span>Some system knowledge can live outside model weights and transfer to another action backend.</div>
+          <p class="scope-line">Not every model is a drop-in replacement. Interface compatibility and primitive competence still constrain the benefit.</p>
+        </div>
+        <aside class="speaker-note"><p>This experiment covers only the Object suite under two perturbations. The harness was evolved with π0.5, then reused with DreamZero without further evolution for that model.</p><p>The result supports separating system knowledge from action weights, but it does not remove the action model’s capability ceiling.</p></aside>
+      </section>
+
+      <section class="slide feedback-process" data-chapter="4" data-title="Data feedback: successful rollouts supply missing demonstrations" data-source="Paper §4.5 Model Feedback; §5.6 Harness Trajectories for Post-Training · Supervised learning from success-filtered trajectories">
+        <div class="slide-body">
+          <p class="lead">LIBERO-PRO provides no demonstrations for its perturbed variants.<br><strong>A converged harness supplies successful observation–action trajectories.</strong></p>
+          <div class="pipeline data-flow"><div class="node"><h3>Converged harness</h3><p>Roll out in Base,<br>Swap, and Task scenes</p></div><span class="arrow">→</span><div class="node"><h3>Success filtering</h3><p>Retain trajectories that<br>pass the task success gate</p></div><span class="arrow">→</span><div class="node"><h3>VLA / WAM learner</h3><p>Supervised fine-tuning<br>on observations and actions</p></div></div>
+          <div class="feedback-protocol"><div><span>DATA MIXTURE</span><p>Base : Swap : Task = <strong>1 : 1 : 1</strong><br>Three-suite mixture: <strong>9 equally sampled categories</strong></p></div><div><span>PER-TASK SPLIT</span><p><strong>Seeds 0–39</strong> · training trajectories<br><strong>Seeds 40–49</strong> · held-out evaluation</p></div></div>
+          <div class="takeaway"><span>Data value</span>Collect trajectories without new human demonstrations or online high-level LLM calls after convergence.</div>
+          <p class="scope-line">The evaluated feedback flows from harness to model. The converged programs are not re-evolved against the fine-tuned checkpoint.</p>
+        </div>
+        <aside class="speaker-note"><p>This is the transition from benchmark performance to data feedback. LIBERO has human demonstrations for standard tasks, but LIBERO-PRO does not provide matching demonstrations for its perturbed variants. A converged harness can execute those variants, and its rollouts supply the observation–action sequences that supervised learning needs.</p><p>Keep only successful trajectories using the task’s success gate. Collection no longer requires online high-level LLM deliberation after convergence, though perception, control, action inference, and execution still have costs. The paper does not provide a trajectory-level cost or a demonstration-count comparison to human collection.</p><p>For per-suite VLA and Object WAM training, Base, Swap, and Task trajectories are sampled equally. The full VLA mixture samples nine categories equally: Object, Goal, and Spatial times Base, Swap, and Task. Training seeds 0–39 and held-out evaluation seeds 40–49 are separate.</p><p>The main evolution loop keeps model weights frozen. This additional experiment updates the model through offline supervised fine-tuning; it does not alternate model updates and harness re-evolution. The next three pages measure this data feedback.</p></aside>
+      </section>
+
+      <section class="slide feedback-suite" data-chapter="4" data-title="VLA data feedback: improvements in all three suites" data-source="Paper §5.6.1 / Fig. 22 · Original training curves; reported best checkpoint per suite within 15,000 steps">
+        <div class="slide-body">
+          <figure class="paper-figure feedback-suite-figure"><img src="media/feedback-vla-suites.webp" alt="Paper Figure 22: per-suite π0.5-LIBERO fine-tuning curves for Object, Goal, and Spatial under Swap and Task perturbations"><figcaption>π<sub>0.5</sub>-LIBERO trained separately on each suite · Base / Swap / Task mixed equally · dashed lines: original policies</figcaption></figure>
+          <table class="academic-table feedback-suite-table"><thead><tr><th>Swap / Task mean</th><th>Object</th><th>Goal</th><th>Spatial</th></tr></thead><tbody><tr><td>Original → fine-tuned VLA</td><td>21.5% → <strong>88.0%</strong></td><td>32.5% → <strong>54.5%</strong></td><td>50.0% → <strong>82.5%</strong></td></tr><tr class="ours-row"><td>Gain from harness data</td><td>+66.5 pp</td><td>+22.0 pp</td><td>+32.5 pp</td></tr></tbody></table>
+          <div class="takeaway"><span>Model improvement</span>Successful harness trajectories improve the standalone VLA across every evaluated suite.</div>
+          <p class="scope-line">Separate suite models and best checkpoints; these three results are distinct from the full-mixture experiment. Training: seeds 0–39; test: 40–49.</p>
+        </div>
+        <aside class="speaker-note"><p>These are original Fig. 22 curves from the supplied paper. Each π0.5-LIBERO model is fine-tuned on one suite, mixing Base, Swap, and Task equally, and evaluated under Swap and Task. Solid curves are raw checkpoint test success rates; dashed lines mark the original checkpoint for each suite and perturbation.</p><p>The summary values are the paper’s reported best suite checkpoints within 15,000 steps: Object 21.5% to 88.0%, Goal 32.5% to 54.5%, and Spatial 50.0% to 82.5%. The gains are arithmetic differences in percentage points. These baselines use the post-training evaluation protocol, so they differ from the 50-seed main benchmark results.</p><p>The evidence supports data usefulness across all three suites. Do not average these separately fine-tuned models and call that the full-mixture result: the next page trains a shared checkpoint on all nine categories.</p></aside>
+      </section>
+
+      <section class="slide feedback-mixture" data-chapter="4" data-title="VLA data feedback: 34.9% → 73.7% on LIBERO-PRO" data-source="Paper §5.6.1 / Fig. 23 · Full nine-category mixture; reported best checkpoint within 30,000 steps">
+        <div class="slide-body">
+          <div class="feedback-chart-layout"><figure class="paper-figure feedback-mixture-figure"><img src="media/feedback-vla-mixture.webp" alt="Paper Figure 23: π0.5-Base and π0.5-LIBERO trained on the full harness trajectory mixture, with Swap and Task curves across all three suites"><figcaption>Original Fig. 23 · faint: raw checkpoints; solid: five-checkpoint moving averages · dashed: starting policy</figcaption></figure><div class="feedback-claims"><div><p class="eyebrow">π<sub>0.5</sub>-LIBERO</p><div class="feedback-score">34.9% <span>→</span> <strong>73.7%</strong></div><p class="feedback-gain">+38.8 percentage points</p><p>Harness trajectories further improve an already adapted VLA.</p></div><div><p class="eyebrow">π<sub>0.5</sub>-BASE</p><div class="feedback-score">Near zero <span>→</span> <strong>53.3%</strong></div><p>No prior LIBERO fine-tuning;<br>harness rollouts supply the additional training data.</p></div></div></div>
+          <div class="takeaway"><span>Shared training</span>One full-mixture model learns from 3 suites × Base / Swap / Task, covering 60 perturbed evaluation tasks.</div>
+          <p class="scope-line">Nine categories sampled equally; train seeds 0–39, test 40–49. Reported scores use each starting checkpoint’s best step within the training budget.</p>
+        </div>
+        <aside class="speaker-note"><p>The full mixture is one shared training setting per starting checkpoint, not an average of the separately trained suite models. Both π0.5-Base and π0.5-LIBERO receive the same full mixture of successful harness trajectories, with the nine categories sampled equally.</p><p>The paper reports each starting checkpoint at its best fine-tuning step within a 30,000-step budget. π0.5-LIBERO improves from 34.9% to 73.7%, a 38.8-point gain; π0.5-Base, which has not previously been fine-tuned on LIBERO, improves from near zero to 53.3%. Do not invent an exact initial success rate for π0.5-Base.</p><p>The plot preserves the original source’s raw and smoothed curves. Held-out scene seeds 40–49 are used for evaluation; checkpoint selection uses the observed evaluation results. The paper does not claim a separately untouched test split beyond that selection.</p><p>This is standalone model improvement via supervised fine-tuning. The 73.7% result is not a harness-plus-fine-tuned-model evaluation and should not be directly subtracted from the main harness’s 96.5%, which uses a different protocol.</p></aside>
+      </section>
+
+      <section class="slide feedback-wam" data-chapter="4" data-title="WAM data feedback: DreamZero improves from 5.1% to 26.5%" data-source="Paper §5.6.2 / Fig. 24 · LIBERO-Object only · Single shared checkpoint selected at 8,500 steps">
+        <div class="slide-body">
+          <div class="feedback-chart-layout"><figure class="paper-figure feedback-wam-figure"><img src="media/feedback-wam.webp" alt="Paper Figure 24: DreamZero fine-tuning on harness trajectories improves Swap and Task success on LIBERO-Object"><figcaption>Original Fig. 24 · raw and smoothed curves;<br>reported checkpoint scores use the raw results</figcaption></figure><div class="wam-evidence"><table class="academic-table wam-feedback-table"><thead><tr><th>Object</th><th>Original</th><th>Fine-tuned</th></tr></thead><tbody><tr><td>Swap</td><td>0.6%</td><td class="strong-value">24.0%</td></tr><tr><td>Task</td><td>9.6%</td><td class="strong-value">29.0%</td></tr><tr class="ours-row"><td>Mean</td><td>5.1%</td><td>26.5%</td></tr></tbody></table><div class="wam-gain"><strong>+21.4 <small>pp</small></strong><p>Mean gain in the standalone WAM</p></div></div></div>
+          <div class="takeaway"><span>Across model families</span>Harness-generated demonstrations improve both a VLA and a WAM through supervised fine-tuning.</div>
+          <p class="scope-line">Object Base / Swap / Task mixed 1:1:1; train seeds 0–39, test 40–49. This is a model update; the earlier zero-shot transfer keeps DreamZero frozen.</p>
+        </div>
+        <aside class="speaker-note"><p>The same data-feedback route is evaluated for DreamZero, but only on LIBERO-Object. Base, Swap, and Task trajectories are mixed equally, with training seeds 0–39 and held-out evaluation seeds 40–49.</p><p>The paper selects one checkpoint by the highest mean of its raw Swap and Task scores among all observed checkpoints. At 8,500 steps, Swap is 24.0% and Task is 29.0%, averaging 26.5%. Relative to the original 0.6% and 9.6%, the gains are 23.4 points on Swap, 19.4 points on Task, and 21.4 points on average.</p><p>This is distinct from the earlier zero-shot harness transfer: transfer wraps the frozen DreamZero with existing code; feedback updates DreamZero’s weights using successful trajectories. The post-training result supports the usefulness of harness data for a WAM, although absolute success remains modest and the paper does not evaluate alternating model–harness co-evolution.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="4" data-title="Effective, not universal: where does the framework stop?" data-source="Manuscript §6 Discussion; §5.1 Experimental Setup; §4.5 Model Feedback">
+        <div class="slide-body">
+          <div class="two-col boundaries"><div class="block"><h3>Favorable conditions</h3><ul class="academic-list"><li>Useful atomic model or control primitives.</li><li>Observable, checkable intermediate stages.</li><li>Repeated tasks that allow program reuse.</li><li>Controlled trials during development.</li></ul></div><div class="block warning-block"><h3>Remaining boundaries</h3><ul class="academic-list"><li>Organization cannot create absent skills.</li><li>Opaque long-horizon stages are harder to repair.</li><li>Fixed code and checks are not a safety proof.</li><li>Different protocols are not controlled ablations.</li></ul></div></div>
+          <div class="question-line">Open questions: unseen-scene generalization, cheaper evolution, and adaptation under explicit safety constraints.</div>
+        </div>
+        <aside class="speaker-note"><p>State the limits proactively: the harness needs capabilities it can organize, adequate observations, and meaningful verification signals.</p><p>Generalization, safety, and joint code–model improvement remain research questions. The design is particularly natural for repeated deployment; one-off, entirely new tasks that cannot be tried safely impose different constraints.</p></aside>
+      </section>
+
+      <section class="slide closing-slide" data-chapter="4" data-title="Take-home message: Physical AI is more than an action model" data-source="HarnessPAI: An Evolving Harness for Physical AI · Darwin Agent Team">
+        <div class="slide-body">
+          <div class="summary-points"><div><span>01</span><p><strong>Observation</strong>Strong motor behavior can coexist with brittle grounding and task understanding.</p></div><div><span>02</span><p><strong>Method</strong>Execute fixed programs, evolve between rollouts, and reuse node-level repairs.</p></div><div><span>03</span><p><strong>Benchmarks</strong>LIBERO-PRO: 34.9% → 96.5%; RoboCasa: 65.0% → 92.2%, with frozen backends.</p></div><div><span>04</span><p><strong>Data feedback</strong>Successful trajectories improve π<sub>0.5</sub> by 38.8 pp and DreamZero by 21.4 pp.</p></div></div>
+          <div class="closing-equation">Physical AI <span>≠</span> Action Model<br><small>Physical AI = Perception + Reasoning + Action + Executable Organization</small></div>
+          <div class="closing-bottom"><strong>Thank you · Q & A</strong><span>Appendix: evaluation protocols / runtime cost / full pipeline</span></div>
+        </div>
+        <aside class="speaker-note"><p>Return to the motivation, method, and experiment evidence. Some actions change the world in ways later reasoning cannot undo, motivating grounding and checks inside a validated program.</p><p>The experiment section establishes two forms of value: better execution with frozen backends, and successful trajectories that improve model weights through supervised fine-tuning. Main harness results are 96.5% on LIBERO-PRO and 92.2% on RoboCasa; the separate post-training studies improve π0.5-LIBERO by 38.8 points and DreamZero by 21.4 points.</p><p>The harness is both an execution framework and a source of demonstrations where perturbed variants have no benchmark-provided expert data. This supports complementarity between system organization and model learning. Alternating harness–model co-evolution remains future work.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="5" data-title="Appendix A · Read the protocol before reading the score" data-source="Manuscript §5.1 Experimental Setup; §5.4 Evolution Process; §5.6 Post-Training">
+        <div class="slide-body">
+          <table class="academic-table protocol-table"><thead><tr><th>Experiment</th><th>Development / training</th><th>Evaluation</th><th>Interpretation</th></tr></thead><tbody><tr><td>LIBERO / PRO</td><td>Evolve on seeds 0–14</td><td>50 seeds, including those 15</td><td>Not wholly unseen seeds</td></tr><tr><td>robosuite</td><td>Evolve on seeds 101–125</td><td>Seeds 1–100</td><td>Disjoint development / evaluation</td></tr><tr><td>RoboCasa Atomic</td><td>Fixed-layout evolution</td><td>18 tasks × 20 seeds</td><td>Obstacles and distractors vary</td></tr><tr><td>BEHAVIOR-1K</td><td>Initially evolve on 26–35</td><td>Zero-shot on seeds 1–25</td><td>Then adapt on failing test seeds</td></tr><tr><td>VLA / WAM fine-tuning</td><td>Seeds 0–39</td><td>Seeds 40–49</td><td>Separate from main harness tests</td></tr></tbody></table>
+          <div class="takeaway"><span>Reporting rule</span>Separate development success, unseen-scene generalization, and test-scene adaptation. Cross-paper results retain their own protocols.</div>
+        </div>
+        <aside class="speaker-note"><p>If asked about overlap, show this page. The 50-seed LIBERO / PRO evaluation includes 15 evolution seeds; robosuite uses disjoint sets.</p><p>The adapted BEHAVIOR result re-evolves on previously failing test seeds, so it is no longer zero-shot. Its value is repair capability, but it must be named accurately.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="5" data-title="Appendix B · No online high-level reasoning is not zero cost" data-source="Manuscript §5.5 Cost / Fig. 21 · LIBERO-Goal Task 1; 50 rollouts each for Swap / Task · Serial comparison only">
+        <div class="slide-body">
+          <table class="academic-table timing-table"><thead><tr><th>Mean time per rollout</th><th>Harness VLA · serial</th><th>HarnessPAI · serial</th><th>Speedup</th></tr></thead><tbody><tr><td>Swap</td><td>1134.9 s</td><td>49.2 s</td><td class="strong-value">23.1×</td></tr><tr><td>Task</td><td>978.1 s</td><td>53.2 s</td><td class="strong-value">18.4×</td></tr></tbody></table>
+          <div class="two-col"><div class="block"><h3>What disappears at runtime</h3><p>After selecting a program, execution does not require step-by-step high-level LLM deliberation.</p></div><div class="block"><h3>What still costs resources</h3><p>Code evolution, perception, action-model inference, control, and simulation or physical execution.</p></div></div>
+          <p class="scope-line">Timing covers the full execution loop. The paper separately reports a 7-GPU parallel setting; its extra speedup is not attributed solely to code here.</p>
+        </div>
+        <aside class="speaker-note"><p>Avoid the phrase “zero cost.” What is removed is online high-level deliberation after program selection, not GPU use, perception, action inference, simulation, or development.</p><p>This table compares serial configurations only. The timing study covers one Goal task; it is not a universal speedup multiplier.</p></aside>
+      </section>
+
+      <section class="slide" data-chapter="5" data-title="Appendix C · The full evolution and memory pipeline" data-source="Manuscript §4.2–4.4 · Original close_loop figure from the supplied project assets">
+        <div class="slide-body"><figure class="paper-figure full-pipeline-figure"><img src="media/close_loop.webp" alt="Full pipeline: optional graph extraction, capability assessment and perception evolution; code evolution; storage of validated code and structured skills"><figcaption>Initialization is optional; execution–diagnosis–repair is central. Retain both validated programs and repair experience.</figcaption></figure></div>
+        <aside class="speaker-note"><p>Use the figure for discussion, rather than reading every box during the main talk. Return to slide 15 for two timescales, slide 18 for the main loop, and slide 21 for skill storage.</p><p>Press O to jump through the outline, or Home to return to the title.</p></aside>
+      </section>
+    </div>
+  </main>
+
+  <nav class="toolbar" aria-label="Presentation controls">
+    <button type="button" id="previous" title="Previous slide (←)" aria-label="Previous slide">←</button>
+    <label class="page-control"><span class="sr-only">Go to slide</span><input id="page-number" type="number" min="1" max="37" value="1" aria-label="Go to slide"><span id="page-total">/ 37</span></label>
+    <button type="button" id="next" title="Next slide (→ / Space)" aria-label="Next slide">→</button>
+    <span class="toolbar-divider"></span>
+    <button type="button" id="overview-toggle" title="Outline (O)" aria-label="Outline" data-short-label="O">Outline <kbd>O</kbd></button>
+    <button type="button" id="notes-toggle" title="Speaker notes (N)" aria-label="Speaker notes" aria-pressed="false" data-short-label="N">Notes <kbd>N</kbd></button>
+    <button type="button" id="fullscreen-toggle" title="Fullscreen (F)" aria-label="Fullscreen" data-short-label="F">Fullscreen <kbd>F</kbd></button>
+    <button type="button" id="print-button" title="Print / save PDF (P)" aria-label="Print or save PDF" data-short-label="P">Export <kbd>P</kbd></button>
+    <button type="button" id="help-toggle" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
+  </nav>
+
+  <aside class="notes-panel" id="notes-panel" aria-label="Speaker notes for the current slide" hidden>
+    <div class="notes-top"><span>Speaker notes</span><button type="button" id="notes-close" aria-label="Close notes">×</button></div>
+    <div class="notes-timer"><span>Elapsed <strong id="timer">00:00</strong></span><button type="button" id="timer-toggle">Start</button><button type="button" id="timer-reset">Reset</button></div>
+    <p class="notes-page" id="notes-page"></p><h2 id="notes-title"></h2><div id="notes-content"></div><div class="notes-next"><span>Up next</span><p id="notes-next-title"></p></div>
+  </aside>
+
+  <dialog id="overview-dialog" aria-labelledby="overview-title"><div class="dialog-heading"><div><span class="eyebrow">LECTURE OUTLINE</span><h2 id="overview-title">Talk outline</h2></div><button type="button" data-close-dialog aria-label="Close outline">×</button></div><div class="overview-grid" id="overview-grid"></div></dialog>
+  <dialog id="help-dialog" aria-labelledby="help-title"><div class="dialog-heading"><h2 id="help-title">Keyboard shortcuts</h2><button type="button" data-close-dialog aria-label="Close help">×</button></div><dl class="keyboard-list"><div><dt>← / → · Space · Page Up / Down</dt><dd>Previous / next slide</dd></div><div><dt>Home / End</dt><dd>First / last slide</dd></div><div><dt>O / N / F</dt><dd>Outline / notes / fullscreen</dd></div><div><dt>V</dt><dd>Play / pause the current video</dd></div><div><dt>P</dt><dd>Print all slides / save PDF</dd></div><div><dt>Esc</dt><dd>Close panels or leave fullscreen</dd></div></dl><p class="help-note">Type a slide number to jump. Swipe horizontally on a phone.<br>For PDF: landscape, no margins, background graphics. Videos print as poster images.</p></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="sr-only" id="slide-announcement" aria-live="polite"></div>
+  <noscript><p class="noscript-warning">Enable JavaScript to use slide navigation, notes, and the outline.</p></noscript>
+</body>
+</html>
