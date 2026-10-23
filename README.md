@@ -6,6 +6,8 @@ An offline, 16:9 HTML presentation with **37 slides**: a cover, a roadmap, and f
 
 Open `index.html` directly in a browser. Keep the directory and its `media` folder together. No build step, network connection, or CDN is required. The project-homepage link is external.
 
+For a large-type, one-page-per-script-page speaker view, open `teleprompter.html`. It contains the 37-page Chinese script, keeps each script page on one browser page, and scales the reading type to the available viewport. Use `→`, `↓`, `Page Down`, or `Space` for the next page; `←`, `↑`, `Page Up`, or `Shift + Space` for the previous page. Press `E` for the source note, `F` for fullscreen, and `?` for all shortcuts. The “对应幻灯片” button opens the matching deck page.
+
 ## Keyboard shortcuts
 
 | Action | Key |
@@ -68,6 +70,7 @@ The final page follows the cover’s white, gray, and orange style, retains the 
 - `index.html`: ordered `section.slide` elements, body content, and speaker notes.
 - `slides.css`: cover, academic layouts, responsive scaling, enlarged figures, and print styles.
 - `slides.js`: headers, exactly four chapter buttons, footers, outline, source notes, navigation, timer, video controls, and figure enlargement. Chapter starts and totals are derived from the slide DOM.
+- `teleprompter.html`: generated standalone Chinese speaker view. `scripts/build-teleprompter.mjs` rebuilds it from `HarnessPAI_30分钟中文讲稿.md` with `node scripts/build-teleprompter.mjs`.
 - To export all 37 slides, press P and save as PDF with landscape orientation, no margins or browser headers, and background graphics. Videos print as posters.
 
 Validation covers every slide’s geometry, figures, four-part navigation, removed source rows, preserved footer labels, notes, figure enlargement, offline assets, responsive scaling, and PDF output in local Chromium.

@@ -1,0 +1,1725 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0f16">
+  <meta name="description" content="HarnessPAI 30分钟中文讲稿提词器，共37页，支持键盘翻页。">
+  <title>HarnessPAI · 中文讲稿提词器</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080d13;
+      --bg-soft: #0e1621;
+      --panel: rgba(17, 27, 39, 0.84);
+      --panel-solid: #111b27;
+      --text: #f4f1e9;
+      --text-soft: #d7dbe0;
+      --muted: #8e9aaa;
+      --line: rgba(255, 255, 255, 0.10);
+      --line-strong: rgba(255, 255, 255, 0.16);
+      --accent: #ff6900;
+      --accent-soft: rgba(255, 105, 0, 0.13);
+      --accent-bright: #ff8b3d;
+      --green: #6ee7b7;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.36);
+      --reading-size: 34px;
+      --radius: 18px;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; }
+    body {
+      overflow: hidden;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 0%, rgba(255, 105, 0, 0.10), transparent 32rem),
+        radial-gradient(circle at 90% 90%, rgba(57, 91, 130, 0.18), transparent 40rem),
+        var(--bg);
+    }
+
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { font: inherit; }
+    a { color: var(--accent-bright); }
+    ::selection { color: #fff; background: rgba(255, 105, 0, 0.45); }
+
+    .app {
+      height: 100dvh;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+    }
+
+    .topbar {
+      min-height: 66px;
+      display: grid;
+      grid-template-columns: minmax(200px, 1fr) auto minmax(200px, 1fr);
+      align-items: center;
+      gap: 20px;
+      padding: 0 28px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(8, 13, 19, 0.76);
+      backdrop-filter: blur(18px);
+      position: relative;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 105, 0, 0.55);
+      border-radius: 9px;
+      color: var(--accent-bright);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 15px;
+      font-weight: 750;
+      background: var(--accent-soft);
+      box-shadow: inset 0 0 18px rgba(255, 105, 0, 0.08);
+    }
+
+    .brand-copy { min-width: 0; line-height: 1.1; }
+    .brand-title {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+    .brand-subtitle {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    .page-counter {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.04em;
+    }
+    .page-counter strong {
+      color: var(--text);
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .page-counter span { font-size: 13px; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .tool-button,
+    .side-button {
+      appearance: none;
+      border: 1px solid transparent;
+      color: var(--text-soft);
+      background: transparent;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    .tool-button {
+      min-width: 38px;
+      height: 36px;
+      padding: 0 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-size: 13px;
+    }
+    .tool-button:hover, .tool-button:focus-visible, .side-button:hover, .side-button:focus-visible {
+      color: #fff;
+      border-color: var(--line-strong);
+      background: rgba(255, 255, 255, 0.06);
+      outline: none;
+    }
+    .tool-button:active, .side-button:active { transform: scale(0.96); }
+    .tool-button.accent { color: var(--accent-bright); }
+    .tool-button .shortcut {
+      min-width: 18px;
+      height: 18px;
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid var(--line-strong);
+      border-radius: 5px;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+    }
+
+    .main {
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .script-page {
+      display: none;
+      height: 100%;
+      min-height: 0;
+    }
+    .script-page.is-active { display: block; }
+
+    .reader {
+      height: 100%;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+      padding: clamp(24px, 3.2vh, 46px) clamp(26px, 6vw, 96px) clamp(30px, 4vh, 58px);
+      scroll-behavior: smooth;
+    }
+    .reader::-webkit-scrollbar { width: 8px; }
+    .reader::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 20px; }
+
+    .page-inner {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      animation: page-in 220ms ease-out;
+    }
+    @keyframes page-in {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-heading {
+      padding-bottom: clamp(16px, 2vh, 24px);
+      margin-bottom: clamp(18px, 2.6vh, 30px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .page-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .page-kicker {
+      color: var(--accent-bright);
+      font-size: 14px;
+      font-weight: 750;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .time-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      border: 1px solid rgba(255, 105, 0, 0.25);
+      border-radius: 999px;
+      color: var(--text-soft);
+      background: rgba(255, 105, 0, 0.06);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    .time-chip strong { color: #fff; font-weight: 650; }
+    .time-chip span { color: var(--accent-bright); }
+    .time-detail { color: var(--muted); font-size: 12px; }
+
+    h1 {
+      max-width: 100%;
+      margin: 0;
+      color: var(--text);
+      font-size: clamp(31px, 3.15vw, 50px);
+      font-weight: 760;
+      line-height: 1.24;
+      letter-spacing: -0.025em;
+      text-wrap: balance;
+    }
+
+    .page-body { padding-bottom: 16px; }
+
+    .script-paragraph {
+      margin: 0 0 0.72em;
+      color: var(--text);
+      font-size: var(--reading-size);
+      font-weight: 520;
+      line-height: 1.72;
+      letter-spacing: 0.012em;
+      text-wrap: pretty;
+    }
+    .script-paragraph:last-of-type { margin-bottom: 0; }
+
+    .cue-block {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: start;
+      gap: 14px;
+      margin: 0 0 clamp(18px, 2.4vh, 27px);
+      padding: 11px 15px;
+      border: 1px solid rgba(255, 177, 74, 0.24);
+      border-left: 3px solid rgba(255, 177, 74, 0.78);
+      border-radius: 9px;
+      background: rgba(255, 177, 74, 0.065);
+      color: #f4d59c;
+    }
+    .cue-block p {
+      margin: 0;
+      font-size: clamp(15px, 1.35vw, 20px);
+      line-height: 1.55;
+      letter-spacing: 0.01em;
+    }
+    .cue-label {
+      padding-top: 3px;
+      color: #ffc66a;
+      font-size: 11px;
+      font-weight: 720;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+
+    .evidence-block {
+      margin-top: 28px;
+      padding-top: 13px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .evidence-block summary {
+      width: fit-content;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+    }
+    .evidence-block summary::-webkit-details-marker { display: none; }
+    .evidence-block summary::before {
+      content: "+";
+      width: 15px;
+      color: var(--accent-bright);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .evidence-block[open] summary::before { content: "−"; }
+    .evidence-block summary kbd {
+      margin-left: 2px;
+      padding: 1px 5px;
+      border: 1px solid var(--line-strong);
+      border-radius: 4px;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+    }
+    .evidence-block p { max-width: 900px; margin: 10px 0 0 23px; }
+
+    .side-button {
+      width: 46px;
+      height: 54px;
+      position: absolute;
+      top: 50%;
+      z-index: 5;
+      display: grid;
+      place-items: center;
+      transform: translateY(-50%);
+      border-color: var(--line);
+      background: rgba(14, 22, 33, 0.66);
+      backdrop-filter: blur(12px);
+      font-size: 26px;
+      line-height: 1;
+    }
+    .side-button:hover { transform: translateY(-50%) scale(1.04); }
+    .side-button:active { transform: translateY(-50%) scale(0.96); }
+    .side-button:disabled { opacity: 0.22; pointer-events: none; }
+    .side-button.previous { left: 16px; }
+    .side-button.next { right: 16px; }
+
+    .bottom-bar {
+      position: relative;
+      z-index: 10;
+      min-height: 50px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 18px;
+      padding: 0 28px;
+      border-top: 1px solid var(--line);
+      background: rgba(8, 13, 19, 0.78);
+      backdrop-filter: blur(18px);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .progress-wrap {
+      min-width: 130px;
+      max-width: 360px;
+      height: 4px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.09);
+    }
+    .progress-bar {
+      width: 2.7%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), #ffb24a);
+      box-shadow: 0 0 12px rgba(255, 105, 0, 0.45);
+      transition: width 220ms ease;
+    }
+    .key-hints {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      white-space: nowrap;
+    }
+    .key-hint { display: inline-flex; align-items: center; gap: 5px; }
+    .key-hint kbd {
+      min-width: 21px;
+      height: 21px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0 5px;
+      border: 1px solid var(--line-strong);
+      border-bottom-color: rgba(255, 255, 255, 0.25);
+      border-radius: 5px;
+      color: var(--text-soft);
+      background: rgba(255, 255, 255, 0.045);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 72px;
+      z-index: 30;
+      transform: translate(-50%, 8px);
+      padding: 9px 14px;
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+      color: var(--text);
+      background: rgba(17, 27, 39, 0.96);
+      box-shadow: var(--shadow);
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+    .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    .help-dialog {
+      width: min(760px, calc(100vw - 32px));
+      max-height: min(760px, calc(100dvh - 36px));
+      padding: 0;
+      border: 1px solid var(--line-strong);
+      border-radius: 18px;
+      color: var(--text);
+      background: var(--panel-solid);
+      box-shadow: var(--shadow);
+    }
+    .help-dialog::backdrop { background: rgba(2, 6, 10, 0.72); backdrop-filter: blur(6px); }
+    .help-card { padding: 26px; }
+    .help-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
+    .help-head h2 { margin: 0 0 5px; font-size: 24px; }
+    .help-head p { margin: 0; color: var(--muted); font-size: 13px; }
+    .close-dialog {
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text-soft);
+      background: transparent;
+      cursor: pointer;
+    }
+    .shortcut-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .shortcut-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: var(--text-soft);
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.025);
+    }
+    .shortcut-row kbd {
+      padding: 3px 6px;
+      border: 1px solid var(--line-strong);
+      border-radius: 5px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 900px) {
+      .topbar { grid-template-columns: 1fr auto; padding: 0 18px; }
+      .page-counter { display: none; }
+      .tool-button .label { display: none; }
+      .bottom-bar { padding: 0 18px; grid-template-columns: auto 1fr; }
+      .key-hints { display: none; }
+      .progress-wrap { justify-self: end; width: min(42vw, 280px); }
+      .side-button { width: 40px; height: 48px; }
+      .side-button.previous { left: 8px; }
+      .side-button.next { right: 8px; }
+      .reader { padding-left: 54px; padding-right: 54px; }
+    }
+
+    @media (max-width: 620px) {
+      .topbar { min-height: 58px; padding: 0 12px; gap: 8px; }
+      .brand-subtitle, .tool-button[data-action="help"], .tool-button[data-action="slides"] span { display: none; }
+      .tool-button { min-width: 34px; height: 34px; padding: 0 8px; }
+      .reader { padding: 22px 46px 30px; }
+      .page-heading { margin-bottom: 18px; }
+      .page-meta { margin-bottom: 11px; }
+      h1 { font-size: clamp(26px, 8vw, 36px); }
+      .cue-block { grid-template-columns: 1fr; gap: 4px; padding: 10px 12px; }
+      .cue-block p { font-size: 15px; }
+      .shortcut-grid { grid-template-columns: 1fr; }
+      .bottom-bar { min-height: 44px; }
+    }
+
+    @media (max-height: 680px) {
+      .topbar { min-height: 54px; }
+      .bottom-bar { min-height: 42px; }
+      .reader { padding-top: 18px; padding-bottom: 22px; }
+      .page-heading { padding-bottom: 13px; margin-bottom: 16px; }
+      .page-meta { margin-bottom: 9px; }
+      .cue-block { margin-bottom: 14px; padding-top: 8px; padding-bottom: 8px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="#page-1" aria-label="回到第1页">
+        <span class="brand-mark">&lt;/&gt;</span>
+        <span class="brand-copy"><span class="brand-title">HarnessPAI</span><span class="brand-subtitle">30 分钟中文讲稿 · 提词器</span></span>
+      </a>
+      <div class="page-counter" aria-hidden="true"><strong id="page-current">01</strong><span>/</span><span id="page-total">37</span></div>
+      <nav class="toolbar" aria-label="提词器工具">
+        <button class="tool-button" type="button" data-action="slides" title="在演示文稿中查看对应页"><span>对应幻灯片</span><span class="shortcut">↗</span></button>
+        <button class="tool-button" type="button" data-action="smaller" title="缩小阅读字号" aria-label="缩小阅读字号">A−</button>
+        <button class="tool-button" type="button" data-action="larger" title="放大阅读字号" aria-label="放大阅读字号">A+</button>
+        <button class="tool-button" type="button" data-action="fullscreen" title="全屏（F）" aria-label="切换全屏"><span class="shortcut">F</span></button>
+        <button class="tool-button" type="button" data-action="help" title="快捷键帮助（?）" aria-label="查看快捷键帮助"><span class="shortcut">?</span></button>
+      </nav>
+    </header>
+
+    <main class="main" id="main">
+      <section class="script-page" id="page-1" data-page="1" data-title="HarnessPAI：面向物理智能的可演化 Harness" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-1">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 01 页</span>
+                <span class="time-chip"><strong>00:00–00:40</strong><span>40秒</span></span>
+                
+              </div>
+              <h1 id="page-title-1">HarnessPAI：面向物理智能的可演化 Harness</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>停留在封面，先看听众，再开始。</p></aside>
+          <p class="script-paragraph">大家好，今天我介绍的工作是 HarnessPAI，面向物理智能的可演化 Harness。</p>
+          <p class="script-paragraph">先从一个机器人操作中很常见的现象说起：机器人已经能够抓起一个碗，把它搬到盘子上；但是，我们只在指令里加一个“不”字，或者把盘子换个位置，它就可能失败。抓取能力还在，任务却没有完成。</p>
+          <p class="script-paragraph">这项工作关注的就是这个落差：怎样把已有的动作能力组织成可靠的任务执行？我们的做法是用可执行代码连接感知、推理和动作，通过执行反馈持续修复代码，再把成功经验变成模型训练数据。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文摘要、§1、§4.1–4.5，PDF第1、3–4、11–18页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-2" data-page="2" data-title="报告路线" data-cue-count="0" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-2">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 02 页</span>
+                <span class="time-chip"><strong>00:40–01:00</strong><span>20秒</span></span>
+                
+              </div>
+              <h1 id="page-title-2">报告路线</h1>
+            </header>
+            <div class="page-body">
+              <p class="script-paragraph">今天分四部分。先介绍物理智能和现有动作模型，再通过几个失败案例解释为什么需要 Harness。随后重点讲代码执行、跨执行演化和技能记忆。最后看实验：系统是否更可靠，经验能否迁移，以及成功轨迹能否反过来训练出更强的模型。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>网页第2页及论文整体结构。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-3" data-page="3" data-title="Physical AI：感知、推理与动作" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-3">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 03 页</span>
+                <span class="time-chip"><strong>01:00–01:45</strong><span>45秒</span></span>
+                
+              </div>
+              <h1 id="page-title-3">Physical AI：感知、推理与动作</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>依次指向 Perception、Reasoning、Action。</p></aside>
+          <p class="script-paragraph">物理智能需要三种能力。感知回答“现在有什么、在哪里”；推理回答“指令指的是谁、有哪些约束、先做什么”；动作负责把计划变成真实的运动和接触。</p>
+          <p class="script-paragraph">VLA，也就是视觉—语言—动作模型，把图像和指令映射为动作。WAM，也就是世界动作模型，还结合了对世界变化的预测。两类模型都给机器人提供了很重要的执行能力。</p>
+          <p class="script-paragraph">但完成一个任务，还要组织目标定位、阶段衔接、结果检查和失败处理。我们把围绕模型的这套组织与执行框架称为 Harness。HarnessPAI 将动作模型作为可以调用的能力原语，再用程序把这些环节连接起来。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§1、§2.1、§4.1，PDF第3–5、11–12页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-4" data-page="4" data-title="标准测试的高分与鲁棒性落差" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-4">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 04 页</span>
+                <span class="time-chip"><strong>01:45–02:35</strong><span>50秒</span></span>
+                
+              </div>
+              <h1 id="page-title-4">标准测试的高分与鲁棒性落差</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>先指上方四个动作阶段，再指下方三组数字。</p></aside>
+          <p class="script-paragraph">先看动作模型已经做好的部分。在标准 LIBERO 场景里，派零点五能够接近目标、抓取、搬运，最后放到盘子上。三个套件的平均成功率是96.9%，表现已经很强。</p>
+          <p class="script-paragraph">然而，在 LIBERO-PRO 中交换物体位置，成功率降到39.7%；改变任务指令，降到30.1%。模型没有换，任务里的基本动作也仍然是抓取和放置，变化的是对象关系和场景条件。</p>
+          <p class="script-paragraph">这说明，标准任务上的高成功率，还不能保证变化之后的可靠执行。系统需要持续把指令和动作对应到当前环境。接下来几个例子，会具体展示这个对应关系在哪些地方失效。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文Fig. 3、Table 4、§5.2.3，PDF第7、20–21页。上述π₀.₅数字为作者评测结果。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-5" data-page="5" data-title="现有的三类改进路径" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-5">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 05 页</span>
+                <span class="time-chip"><strong>02:35–03:20</strong><span>45秒</span></span>
+                
+              </div>
+              <h1 id="page-title-5">现有的三类改进路径</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>按图中三类范式讲解，不逐项念表。</p></aside>
+          <p class="script-paragraph">针对这些问题，现有工作大致有三条路径。</p>
+          <p class="script-paragraph">第一条是后训练，用示范数据或奖励更新模型参数。第二条是 Code as Policy，把任务写成调用环境接口的程序。第三条是围绕冻结的动作模型加上 Agent、规划和记忆，形成外部 Harness。</p>
+          <p class="script-paragraph">HarnessPAI 结合了可执行程序和已有动作能力：程序组织感知、任务推理、模型调用与验证，并根据实际执行结果不断修改。适应经验因此可以保存在代码和修复记忆里。模型参数的更新，则放在后面的轨迹反馈实验中单独考察。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§2、Fig. 2、§3.3，PDF第4–6、10–11页。本页是范式比较。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-6" data-page="6" data-title="语言变化：“not between”改变了目标" data-cue-count="2" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-6">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 06 页</span>
+                <span class="time-chip"><strong>03:20–04:15</strong><span>55秒</span></span>
+                <span class="time-detail">含约15秒视频</span>
+              </div>
+              <h1 id="page-title-6">语言变化：“not between”改变了目标</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>视频自动播放。若已循环，用 V 暂停后重播；看完一轮即可。指左侧错误目标与右侧正确目标。</p></aside>
+          <p class="script-paragraph">先看语言变化。原来的任务是抓起盘子和小碗之间的黑碗。现在加上“not between”，变成抓起“不在它们之间”的黑碗。一个词，就把目标切换到了另一个对象。</p>
+          <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>让观众看清两侧抓取结果，可短暂停顿。</p></aside>
+          <p class="script-paragraph">左侧模型仍然抓了原来的碗，右侧 HarnessPAI 先重新确定指令对应的目标，再调用动作能力完成抓取。这里要补上的，是从语言关系到当前对象的定位过程。</p>
+          <p class="script-paragraph">视频展示的是选取的行为案例，两侧初始布局有所不同；总体效果要看后面的批量评测。这个例子能说明指令跟随出现了问题，具体原因还需要进一步分析。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§3.1、Fig. 4，PDF第7–8页；网页所用项目视频。视频未展示论文中的额外遮罩干预行。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-7" data-page="7" data-title="场景变化：放置位置必须跟着盘子移动" data-cue-count="2" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-7">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 07 页</span>
+                <span class="time-chip"><strong>04:15–05:10</strong><span>55秒</span></span>
+                <span class="time-detail">含约15秒视频</span>
+              </div>
+              <h1 id="page-title-7">场景变化：放置位置必须跟着盘子移动</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>播放一轮，指盘子的新位置以及左侧的放置位置。</p></aside>
+          <p class="script-paragraph">第二个例子保留了指令，但改变了场景布局。视频中，盘子和一个干扰碗交换了位置。任务仍然要求把目标黑碗放到盘子上。</p>
+          <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>在搬运、放置阶段稍作停顿。</p></aside>
+          <p class="script-paragraph">左侧机器人能够抓起并搬运目标碗，却把它放向盘子原来的位置。它已经有可用的动作能力，放置目标没有及时跟着场景更新。右侧程序重新定位盘子，再把动作引导到新的目标位置。</p>
+          <p class="script-paragraph">视频和论文静态图交换的具体物体略有不同，但都展示了同一个问题：机器人执行任务时，需要依据当前几何关系确定动作目标。这个目标应该在哪里，不能只沿用之前的布局。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§3.1、Fig. 5，PDF第7–9页；网页项目视频。视频交换盘子与干扰碗，论文图交换盘子与小碗。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-8" data-page="8" data-title="精细操作：碰到附近，还不等于按下按钮" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-8">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 08 页</span>
+                <span class="time-chip"><strong>05:10–05:45</strong><span>35秒</span></span>
+                
+              </div>
+              <h1 id="page-title-8">精细操作：碰到附近，还不等于按下按钮</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>指上排失败尝试与下排成功执行。</p></aside>
+          <p class="script-paragraph">第三种问题出现在精细操作。上排的世界动作模型已经靠近微波炉，也把末端伸向启动按钮，但几次尝试都没有完成按压。</p>
+          <p class="script-paragraph">面对这样的小目标，系统需要明确定位、对齐动作，并检查按钮对应的状态是否真的改变。下排展示了 HarnessPAI 的成功执行。</p>
+          <p class="script-paragraph">这里的启发是：到达目标附近只是中间状态。任务是否完成，需要可观察的结果来判断，才能决定是否继续下一阶段。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文Fig. 6、§3.1，PDF第8、10页。案例未分离定位、接触控制与动作生成各自的影响。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-9" data-page="9" data-title="物理错误可能持续改变环境" data-cue-count="0" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-9">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 09 页</span>
+                <span class="time-chip"><strong>05:45–06:15</strong><span>30秒</span></span>
+                
+              </div>
+              <h1 id="page-title-9">物理错误可能持续改变环境</h1>
+            </header>
+            <div class="page-body">
+              <p class="script-paragraph">物理任务还有一个特别重要的特点：错误动作可能持续改变环境。比如搬起锅时，如果抓取不对，锅可能翻倒或掉落，后续再推理也很难恢复原来的状态。</p>
+          <p class="script-paragraph">因此，执行高风险动作之前，要检查目标和前置条件；执行过程中，也要用观测确认关键状态。这个考虑推动我们把任务组织成稳定、可检查的程序，让每一步是否能够继续都有明确依据。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§3.2、Fig. 7，PDF第9–10页。本页只使用物理失败现象，不据此归属定量基准。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-10" data-page="10" data-title="锅掉落案例：把验证放到行动之前" data-cue-count="2" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-10">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 10 页</span>
+                <span class="time-chip"><strong>06:15–06:50</strong><span>35秒</span></span>
+                <span class="time-detail">含约15秒视频</span>
+              </div>
+              <h1 id="page-title-10">锅掉落案例：把验证放到行动之前</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>播放一轮，看到锅掉到桌下即可暂停，不等待循环。</p></aside>
+          <p class="script-paragraph">这段视频把刚才的风险展示得更直观。左边是脚本构造的掉锅示例，右边是 HarnessPAI 的成功搬起过程。锅掉到桌下之后，这次执行已经无法把任务恢复回来。</p>
+          <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>短暂停顿，让观众看结果。</p></aside>
+          <p class="script-paragraph">所以，我们希望在抓取和抬升之前确认条件，把修复经验提前写进程序。开发时通过多次执行完善程序，之后每次运行都争取一次完成。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>网页提供的robosuite TwoArmLift演示视频及论文§3.2。左侧为脚本示意。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-11" data-page="11" data-title="为什么选择可执行代码" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-11">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 11 页</span>
+                <span class="time-chip"><strong>06:50–07:35</strong><span>45秒</span></span>
+                
+              </div>
+              <h1 id="page-title-11">为什么选择可执行代码</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>指三组关键词 Executable、Inspectable、Evolvable。</p></aside>
+          <p class="script-paragraph">这些问题汇总起来，解释了我们为什么选择代码。</p>
+          <p class="script-paragraph">首先，代码可以执行：它能定位对象、调用控制接口和动作模型，也能运行成功检查。其次，代码可以检查：目标如何计算、在哪一步失败，都能明确地定位和修改。第三，代码可以演化：把一轮执行的反馈变成下一轮的程序修订，再验证修改有没有效果。</p>
+          <p class="script-paragraph">这个设计尤其适合同类任务反复执行的场景。前期花成本建立和验证程序，后续持续复用；新任务则利用之前积累的修复经验。接下来我们看，框架如何把这几件事落实下来。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§3.3、Fig. 2，PDF第6、10–11页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-12" data-page="12" data-title="HarnessPAI 的整体架构" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-12">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 12 页</span>
+                <span class="time-chip"><strong>07:35–08:40</strong><span>65秒</span></span>
+                
+              </div>
+              <h1 id="page-title-12">HarnessPAI 的整体架构</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>先指中间的任务检索路径，再指三种记忆，最后指右侧原语库。</p></aside>
+          <p class="script-paragraph">这张图是框架的核心。收到任务后，系统先检索任务记忆。如果已有对应的程序，就从代码记忆中取出并执行；如果没有，就结合技能记忆进入代码生成和演化。</p>
+          <p class="script-paragraph">这里有三种记忆。任务记忆记录做过什么；代码记忆保存具体怎么执行；结构化技能记忆记录某个阶段曾经怎样失败、后来怎样修好。它们分别支持任务检索、直接运行和经验复用。</p>
+          <p class="script-paragraph">右侧是程序能够调用的原语库。感知原语负责找到物体，控制原语负责移动到目标位姿，模型原语提供学习得到的操作能力。程序根据任务需要组合这些接口。</p>
+          <p class="script-paragraph">因此，同一个组织方式可以连接 VLA、WAM、控制 API，或者强化学习策略。要适配不同机器人，仍然需要提供对应接口，但执行和演化的基本逻辑可以保持一致。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§4.1、Fig. 8，PDF第11–12页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-13" data-page="13" data-title="两个时间尺度：固定执行与代码演化" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-13">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 13 页</span>
+                <span class="time-chip"><strong>08:40–10:05</strong><span>85秒</span></span>
+                
+              </div>
+              <h1 id="page-title-13">两个时间尺度：固定执行与代码演化</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>重点停留。先指左侧，再指右侧。</p></aside>
+          <p class="script-paragraph">整个方法最关键的设计，是把执行和改进放在两个时间尺度上。</p>
+          <p class="script-paragraph">左边是一次完整执行内部。任务程序保持固定，按照预先写好的逻辑定位目标、采取动作、检查结果，再决定能否进入下一阶段。论文把它称为程序层面的开环执行。</p>
+          <p class="script-paragraph">这里“固定”的是高层任务程序。运行时仍然读取相机、距离或接触等观测，也仍然使用底层反馈控制。比如抓取之后，程序检查物体是否真的被拿起；如果条件不满足，就进入已经定义好的处理分支。执行中不需要每一步都重新请高层 Agent 改写方案。</p>
+          <p class="script-paragraph">右边是多次执行之间。程序运行结束后，系统收集视频、轨迹、日志和成功信号，诊断问题，修改候选代码，再进行验证。这就是闭环演化。</p>
+          <p class="script-paragraph">两者结合起来，既让执行过程稳定可复现，又让程序能够通过经验持续改进。实验环境允许重置，便于开发时验证；实际部署时，每次动作的后果仍然需要认真考虑。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§3.2、§4.1–4.3，PDF第9–15页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-14" data-page="14" data-title="混合执行：代码组织学习到的操作能力" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-14">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 14 页</span>
+                <span class="time-chip"><strong>10:05–11:15</strong><span>70秒</span></span>
+                
+              </div>
+              <h1 id="page-title-14">混合执行：代码组织学习到的操作能力</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>沿着接近、抓取、搬运、放置的顺序指图和表格。</p></aside>
+          <p class="script-paragraph">用刚才的碗任务来看，这种组织非常具体。</p>
+          <p class="script-paragraph">首先，程序调用分割和几何计算，确定目标碗及盘子的位置，再把末端移动到合适的接近位姿。接着调用 VLA 执行抓取，因为这部分涉及接触和操作细节，模型已经有可用的能力。</p>
+          <p class="script-paragraph">确认抓取成立之后，程序根据当前盘子的位置组织搬运，最后再调用动作模型完成放置，并检查结果。程序负责把各阶段串起来，动作模型承担它擅长的操作阶段。</p>
+          <p class="script-paragraph">注意，阶段之间有验证条件。抓取动作调用结束，不代表物体已经拿稳；只有检查通过，才能开始搬运。这样可以避免前面一个小错误一直传播到任务结束。</p>
+          <p class="script-paragraph">这张表是一个具体任务的分工示例。其他任务如何分工，要看原语能力和可观测状态，框架并没有要求所有任务都使用完全相同的阶段划分。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文Table 3、§4.1、§4.3，PDF第11–12、15页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-15" data-page="15" data-title="初始化模块按需接入" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-15">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 15 页</span>
+                <span class="time-chip"><strong>11:15–11:55</strong><span>40秒</span></span>
+                
+              </div>
+              <h1 id="page-title-15">初始化模块按需接入</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>依次指三个可选模块。</p></aside>
+          <p class="script-paragraph">在开始演化之前，框架可以按需接入三种初始化。</p>
+          <p class="script-paragraph">有示范视频时，可以提取任务工作流；有动作模型时，可以先观察它在哪些阶段可靠、哪些阶段需要代码支持；对感知依赖较强的任务，还可以初始化目标识别和定位代码。</p>
+          <p class="script-paragraph">这三项都是可选的。所有任务共同需要的，是执行、诊断、修复和验证这条主循环。例如后面的扫地机器人实验，没有 VLA，也可以用传感器和控制 API 运行代码演化。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§4.2、Fig. 9，PDF第12–13页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-16" data-page="16" data-title="候选代码如何被验证与保留" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-16">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 16 页</span>
+                <span class="time-chip"><strong>11:55–13:10</strong><span>75秒</span></span>
+                
+              </div>
+              <h1 id="page-title-16">候选代码如何被验证与保留</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>按 Write → Pre-flight &amp; probe → Full batch → Promote 指示。</p></aside>
+          <p class="script-paragraph">现在看主循环。Agent 首先在隔离的候选副本中生成或修改代码，然后做预检查，确认程序能够启动、接口调用正确，把软件错误先排除掉。</p>
+          <p class="script-paragraph">接下来针对上一轮失败的三个种子做快速验证。修复如果连这些失败场景都没有解决，就继续修改；通过之后，才运行完整开发批次，检查它有没有同时破坏此前已经成功的场景。</p>
+          <p class="script-paragraph">如果所有开发执行都满足成功条件，候选程序才进入已验证代码库，修复经验也随之保留。如果仍有失败，视频、日志和检查信号会成为下一轮修改的依据。崩溃和超时也算失败，演化有明确的轮数预算。</p>
+          <p class="script-paragraph">隔离候选副本很重要，因为一次新修改不应该覆盖原来已经工作的程序。通过这种方式，系统把改进落实为经过验证的版本，也能够识别修复带来的回退。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§4.3、Algorithm 1，PDF第13–15页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-17" data-page="17" data-title="成功合同与独立诊断" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-17">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 17 页</span>
+                <span class="time-chip"><strong>13:10–14:15</strong><span>65秒</span></span>
+                
+              </div>
+              <h1 id="page-title-17">成功合同与独立诊断</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>指成功合同、代码编写者、视频诊断者和确定性检查。</p></aside>
+          <p class="script-paragraph">演化之前，还要先明确一件事：什么才算成功。</p>
+          <p class="script-paragraph">论文用“成功合同”固定评测范围、最终目标和判断依据。程序正常退出、走到最后一行，或者获得比较高的过程奖励，都不自动等于物理任务完成。比如夹爪到了目标坐标，物体却没有进入容器，任务仍然失败。</p>
+          <p class="script-paragraph">框架因此区分了代码编写和执行诊断。编写者负责修改程序；独立的视频诊断模型观察执行过程，提出失败发生在哪个节点、可能是什么原因；确定性检查则根据环境里的权威目标条件给出结果。</p>
+          <p class="script-paragraph">视频诊断帮助我们找到原因，但它也可能判断错误。最终，候选程序必须通过预先约定的任务检查。这样，写程序的模型不能只凭自己的“已经收敛”判断，就让代码进入已验证库。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§4.3、Algorithm 1、Table 2，PDF第14–15页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-18" data-page="18" data-title="记忆保存程序，也保存修复经验" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-18">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 18 页</span>
+                <span class="time-chip"><strong>14:15–15:15</strong><span>60秒</span></span>
+                
+              </div>
+              <h1 id="page-title-18">记忆保存程序，也保存修复经验</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>指图中的任务、节点、技能与代码关系。</p></aside>
+          <p class="script-paragraph">一次演化留下两类成果。一类是可运行程序，回答“这个任务怎样执行”；另一类是修复经验，回答“这个阶段遇到这种问题，应该怎样改”。</p>
+          <p class="script-paragraph">论文附录有一个很具体的例子：放置目标算成了篮筐整体的中心，但真正需要对齐的是篮口。从斜视角定位时，近侧篮壁把估计位置拉偏了约五厘米，物体到了计算出的目标，却撞到边缘，没有落进篮子。</p>
+          <p class="script-paragraph">修复经验记录这个失败条件，并给出按上沿点集计算篮口位置的方法。它还引用代码库中维护的实现，后续可以找到具体要修改的模块。</p>
+          <p class="script-paragraph">这样，系统积累的经验就能够帮助下一个任务。代码负责执行，技能记忆帮助 Agent 少走已经走过的弯路。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§4.4、Fig. 10及Appendix C，PDF第15–16、44–45页。篮口例子为口头补充。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-19" data-page="19" data-title="以工作流节点组织技能检索" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-19">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 19 页</span>
+                <span class="time-chip"><strong>15:15–16:05</strong><span>50秒</span></span>
+                
+              </div>
+              <h1 id="page-title-19">以工作流节点组织技能检索</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>先指左侧散落文件，再指右侧工作流节点。</p></aside>
+          <p class="script-paragraph">经验如何组织，同样影响它能不能用起来。如果每次失败都单独存成一个文件，随着任务增加，Agent 就要在大量记录里寻找相关经验。</p>
+          <p class="script-paragraph">HarnessPAI 把修复挂在工作流节点上。空抓、夹爪对齐错误和滑落，可以按抓取阶段检索；路径碰撞可以按搬运阶段检索；刚才的篮口定位问题，则归在放置阶段。</p>
+          <p class="script-paragraph">新任务虽然整体不同，却可能共享这些阶段。Agent 找到失败节点，就能查询此前同阶段的修复，再结合当前任务修改实现。这个结构提供了跨任务复用的机制；后面我们会通过收敛曲线看它实际带来了什么帮助。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§4.4、Fig. 10–11，PDF第15–17页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-20" data-page="20" data-title="收敛程序成为训练数据来源" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-20">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 20 页</span>
+                <span class="time-chip"><strong>16:05–17:15</strong><span>70秒</span></span>
+                
+              </div>
+              <h1 id="page-title-20">收敛程序成为训练数据来源</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>沿 Harness → 成功轨迹 → 模型微调的箭头讲解。</p></aside>
+          <p class="script-paragraph">到这里，程序可以稳定执行，也积累了修复经验。我们进一步利用它生成训练数据。</p>
+          <p class="script-paragraph">LIBERO 原始任务有示范，但 LIBERO-PRO 的扰动版本没有基准提供的对应示范。模型在这些变化场景里经常失败，直接获得成功轨迹比较困难。</p>
+          <p class="script-paragraph">收敛后的 Harness 可以在原始场景、位置交换和任务变化条件下运行，记录观测与动作，再用任务成功检查筛选轨迹。这些成功数据就能够用于监督微调，让模型学习程序执行中完成任务的行为。</p>
+          <p class="script-paragraph">这样，Harness 的价值延伸到了模型学习：执行反馈推动代码演化，成功轨迹再把程序积累的任务经验回流到模型参数中。后面的实验会分别展示代码演化带来的执行提升，以及数据回流带来的模型提升。</p>
+          <p class="script-paragraph">采集时不用在线高层 Agent 逐步推理，但感知、模型推理和环境运行仍然有成本。这也特别适合反复执行同类任务：验证过的程序可以持续生产数据。下面看这两层收益的实验结果。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§4.5、§5.6，PDF第17–18、27–29页。当前评测的是监督微调。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-21" data-page="21" data-title="实验覆盖与评测范围" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-21">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 21 页</span>
+                <span class="time-chip"><strong>17:15–18:10</strong><span>55秒</span></span>
+                
+              </div>
+              <h1 id="page-title-21">实验覆盖与评测范围</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>扫过具身形态，不逐行念种子编号。</p></aside>
+          <p class="script-paragraph">实验覆盖七种设置、四类具身形态，包括机械臂、移动操作机器人、扫地机器人和行走机器人。接口也涵盖 VLA、WAM、抓取模块、控制 API 和 PPO 策略，目的是检验框架能否组织不同的底层能力。</p>
+          <p class="script-paragraph">读结果时，要留意开发与评测的区别。LIBERO 和 LIBERO-PRO 的50个评测种子里，包含15个开发种子；robosuite 的开发与评测种子完全分开。BEHAVIOR 先测试未见种子，随后还会在失败场景上适应。</p>
+          <p class="script-paragraph">模型微调又使用另一套划分，种子零到三十九用于训练，四十到四十九用于评测。后面我会按各自范围解释结果，重点比较同一个冻结后端加入 Harness 前后的变化。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§5.1，PDF第18–19页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-22" data-page="22" data-title="同一个冻结模型，系统执行显著改善" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-22">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 22 页</span>
+                <span class="time-chip"><strong>18:10–19:05</strong><span>55秒</span></span>
+                
+              </div>
+              <h1 id="page-title-22">同一个冻结模型，系统执行显著改善</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>重点强调两组前后对比。</p></aside>
+          <p class="script-paragraph">先看最直接的两组结果。</p>
+          <p class="script-paragraph">在 LIBERO-PRO 上，同一个派零点五模型，单独执行的成功率是34.9%；加入 HarnessPAI 后，系统成功率达到96.5%，增加61.6个百分点。评测覆盖三个套件、两类扰动，共60个扰动任务。</p>
+          <p class="script-paragraph">在 RoboCasa 的18个 Atomic-Seen 任务上，同一个 WorldDreamer 后端从65.0%提升到92.2%，增加27.2个百分点。</p>
+          <p class="script-paragraph">这两组比较中，动作模型参数保持不变，改进来自围绕模型建立和演化的执行系统。它们说明，现有动作能力还有可以通过更好的定位、组织和检查释放出来的空间。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§5.2.3–5.2.4、Table 5及Table 7，PDF第21–22、37页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-23" data-page="23" data-title="标准 LIBERO：保持已有的强性能" data-cue-count="0" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-23">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 23 页</span>
+                <span class="time-chip"><strong>19:05–19:35</strong><span>30秒</span></span>
+                
+              </div>
+              <h1 id="page-title-23">标准 LIBERO：保持已有的强性能</h1>
+            </header>
+            <div class="page-body">
+              <p class="script-paragraph">标准 LIBERO 上，派零点五本来已经达到96.9%，HarnessPAI 进一步提升到98.1%，Object 套件达到100%。</p>
+          <p class="script-paragraph">这页说明，加入程序组织后，系统能够保持原有的强表现，并进一步改善。由于标准任务的成功率已经接近上限，增益比较有限。更明显的区别，出现在下一页的指令与场景扰动中。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文Table 4、§5.2.2，PDF第19–21页。跨论文方法保留各自评测协议。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-24" data-page="24" data-title="LIBERO-PRO：增益覆盖六种条件" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-24">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 24 页</span>
+                <span class="time-chip"><strong>19:35–20:25</strong><span>50秒</span></span>
+                
+              </div>
+              <h1 id="page-title-24">LIBERO-PRO：增益覆盖六种条件</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>按 Object、Goal、Spatial 扫过橙色柱。</p></aside>
+          <p class="script-paragraph">这张图把平均结果展开为六种条件：Object、Goal、Spatial 三个套件，各自包含 Swap 和 Task 两类扰动。</p>
+          <p class="script-paragraph">橙色是 HarnessPAI。六组结果都超过93%，最高达到99.2%，因此总体提升覆盖了不同套件和扰动。相比表中最强的已有 Harness 结果87.7%，论文报告的总体优势是8.8个百分点。</p>
+          <p class="script-paragraph">同一任务的程序在原始和扰动条件中复用，执行时根据当前对象和指令关系定位目标。这与前面展示的机制一致。已有方法的评测种子数量有所不同，所以同一冻结模型的前后比较，仍然是判断系统增益的主要依据。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文Fig. 13、Table 7、§5.2.3，PDF第21、37、41页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-25" data-page="25" data-title="robosuite：精细几何操作收益突出" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-25">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 25 页</span>
+                <span class="time-chip"><strong>20:25–21:00</strong><span>35秒</span></span>
+                
+              </div>
+              <h1 id="page-title-25">robosuite：精细几何操作收益突出</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>重点指 Insert 与 Two-arm Lift。</p></aside>
+          <p class="script-paragraph">robosuite 的开发和评测种子完全分开。七个任务的平均成功率是96.3%，其中五个达到100%。</p>
+          <p class="script-paragraph">最明显的提升出现在插入任务，从 ASPIRE 的9%达到83%；双臂抬升从71%达到91%。这类任务对感知对齐和几何处理要求很高，模块化代码方便定位误差、修订控制逻辑，再跨场景验证。其他方法数字来自原论文，这里展示的是完整系统的比较。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文Fig. 12、§5.2.1、Table 6，PDF第19、37页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-26" data-page="26" data-title="RoboCasa：迁移到移动操作与 WAM 后端" data-cue-count="0" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-26">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 26 页</span>
+                <span class="time-chip"><strong>21:00–21:30</strong><span>30秒</span></span>
+                
+              </div>
+              <h1 id="page-title-26">RoboCasa：迁移到移动操作与 WAM 后端</h1>
+            </header>
+            <div class="page-body">
+              <p class="script-paragraph">RoboCasa 把场景换成了移动操作机器人，底层模型也换成 WorldDreamer。18个 Atomic-Seen 任务上，同一后端从65.0%提升到92.2%。</p>
+          <p class="script-paragraph">这一结果支持框架在所测试的 VLA 和 WAM 后端之间具有可移植性。两边的机器人和接口有差别，但目标定位、任务编排、执行检查和代码修复仍然可以采用相同的组织方式。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§5.2.4、Table 5，PDF第22页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-27" data-page="27" data-title="BEHAVIOR-1K：区分到达目标与完成任务" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-27">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 27 页</span>
+                <span class="time-chip"><strong>21:30–22:10</strong><span>40秒</span></span>
+                
+              </div>
+              <h1 id="page-title-27">BEHAVIOR-1K：区分到达目标与完成任务</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>分别指 Nav 与 Task。</p></aside>
+          <p class="script-paragraph">家庭任务还要区分“机器人到达了目标”与“机器人完成了操作”。初始程序在未见种子上，拿收音机的任务成功率是84%，拿汽水罐是72%，都低于对应的导航到达率。</p>
+          <p class="script-paragraph">随后，框架针对失败场景继续演化八轮，任务成功率分别达到100%和92%，与导航到达率一致。也就是说，这组评测中，能到达的场景最后都完成了操作。</p>
+          <p class="script-paragraph">后半段使用了失败评测场景进行适应，因此应理解为修复效果，初始结果才是零样本测试。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文Fig. 14、Fig. 20、§5.2.5、§5.4，PDF第22–23、26页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-28" data-page="28" data-title="VacuSim：控制 API 也能接入演化循环" data-cue-count="0" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-28">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 28 页</span>
+                <span class="time-chip"><strong>22:10–22:45</strong><span>35秒</span></span>
+                
+              </div>
+              <h1 id="page-title-28">VacuSim：控制 API 也能接入演化循环</h1>
+            </header>
+            <div class="page-body">
+              <p class="script-paragraph">扫地机器人实验使用速度控制、碰撞和距离传感器，没有学习得到的动作模型。执行反馈来自环境计算的地面覆盖率。</p>
+          <p class="script-paragraph">在有家具的地图上，覆盖率从11.72%提升到53.92%；无家具地图最终达到63.76%。这说明代码演化可以直接围绕传感器与控制 API 改进策略。</p>
+          <p class="script-paragraph">这里衡量的是限定时间内的清扫覆盖，不是二元任务成功率；两张地图的尺寸、预算和可清扫区域也不同。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§5.2.6、Fig. 15–16，PDF第23–24页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-29" data-page="29" data-title="MicroDuck：围绕同一个行走策略修正漂移" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-29">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 29 页</span>
+                <span class="time-chip"><strong>22:45–23:15</strong><span>30秒</span></span>
+                
+              </div>
+              <h1 id="page-title-29">MicroDuck：围绕同一个行走策略修正漂移</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>指平面轨迹与横向误差曲线。</p></aside>
+          <p class="script-paragraph">最后一个具身例子是直线行走。同一个 PPO Walker 策略，前进四米时会累计大约零点八米的横向漂移。</p>
+          <p class="script-paragraph">Harness 测量方向误差并给出转向修正，横向误差保持在零附近，机器人到达了终点，整个过程没有重新训练底层策略。这里报告的是轨迹和误差，它展示了程序能够组织并纠正已有行走能力。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§5.2.7、Fig. 17，PDF第23–24页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-30" data-page="30" data-title="零样本迁移：把π₀.₅的 Harness 用于 DreamZero" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-30">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 30 页</span>
+                <span class="time-chip"><strong>23:15–24:10</strong><span>55秒</span></span>
+                
+              </div>
+              <h1 id="page-title-30">零样本迁移：把π₀.₅的 Harness 用于 DreamZero</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>强调“替换动作模型调用”，再指两组前后数字。</p></aside>
+          <p class="script-paragraph">接下来考察，程序里积累的经验能否迁移到另一个动作模型。</p>
+          <p class="script-paragraph">我们把在派零点五上演化得到的 LIBERO-Object 程序用于 DreamZero，只替换动作模型调用，保留感知、几何处理和检查。没有为新模型重新演化 Harness，也没有微调 DreamZero。</p>
+          <p class="script-paragraph">在 Object 的 Swap 扰动上，成功率从0.6%提升到73.4%；Task 扰动从9.6%提升到84.4%。这说明部分任务知识保存在可执行系统中，换一个兼容后端后仍然有用。</p>
+          <p class="script-paragraph">它也有边界：后端必须具有相应的动作能力，接口需要兼容。这里的零样本迁移指对新动作模型的迁移，评测范围是 Object 套件。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§5.3、Fig. 18、Table 15，PDF第24–25、44页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-31" data-page="31" data-title="技能记忆缩短代码演化过程" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-31">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 31 页</span>
+                <span class="time-chip"><strong>24:10–24:50</strong><span>40秒</span></span>
+                
+              </div>
+              <h1 id="page-title-31">技能记忆缩短代码演化过程</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>对比三幅图中的无技能与有技能曲线。</p></aside>
+          <p class="script-paragraph">这张图比较了有无技能库时，三个代表任务的开发过程。没有技能时，有的任务长时间卡在一个错误上，有的修改后反复回退，有的靠多次局部修正逐渐提高。</p>
+          <p class="script-paragraph">加入已有修复技能后，这三个任务都在两轮以内达到100%的开发成功率。技能库帮助 Agent 更快找到可用修复，把预算用在当前任务的调整上。</p>
+          <p class="script-paragraph">这是三个代表任务的开发证据，显示了经验复用对搜索效率的帮助；未见场景的表现仍需要另外评测。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§5.4、Fig. 19，PDF第25–26页；每轮统计Swap和Task各15个开发种子，共30次执行。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-32" data-page="32" data-title="轨迹反馈：三个套件的独立 VLA 都改善" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-32">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 32 页</span>
+                <span class="time-chip"><strong>24:50–25:40</strong><span>50秒</span></span>
+                
+              </div>
+              <h1 id="page-title-32">轨迹反馈：三个套件的独立 VLA 都改善</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>翻页时明确语气转折，提示进入模型训练结果。</p></aside>
+          <p class="script-paragraph">前面都是冻结模型时，整个系统的执行效果。现在看成功轨迹用于训练之后，独立模型本身是否变强。</p>
+          <p class="script-paragraph">先分别在三个套件上微调派零点五。每个套件等比例混合原始、位置交换和任务变化的成功轨迹，训练种子与评测种子分开。</p>
+          <p class="script-paragraph">Object 从21.5%提升到88.0%，Goal 从32.5%提升到54.5%，Spatial 从50.0%提升到82.5%。三个套件都改善，说明 Harness 收集的数据具有训练价值。</p>
+          <p class="script-paragraph">这一页是三个分别训练的模型，各自报告一万五千步预算内的最佳检查点。下一页才是把全部套件数据混合后训练同一个模型。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§5.6.1、Fig. 22，PDF第28–29页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-33" data-page="33" data-title="完整混合训练：π₀.₅-LIBERO达到73.7%" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-33">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 33 页</span>
+                <span class="time-chip"><strong>25:40–26:50</strong><span>70秒</span></span>
+                
+              </div>
+              <h1 id="page-title-33">完整混合训练：π₀.₅-LIBERO达到73.7%</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>指下排π₀.₅-LIBERO曲线，再指右侧数字；随后简述π₀.₅-Base。</p></aside>
+          <p class="script-paragraph">完整混合训练把三个套件与三种场景条件组合成九类数据，等比例采样。我们分别从两个起点训练：已经在 LIBERO 上微调过的派零点五，以及还没有做 LIBERO 微调的 Base 模型。</p>
+          <p class="script-paragraph">对派零点五 LIBERO 模型，扰动任务平均成功率从34.9%提升到73.7%，增加38.8个百分点。Base 模型则从接近零提升到53.3%。这表明，数据既能帮助已有模型进一步适应扰动，也能帮助没有做过该基准微调的模型学习任务。</p>
+          <p class="script-paragraph">这里使用零到三十九号种子提供训练数据，四十到四十九号用于评测；报告三万步预算内的最佳检查点。最佳步数依据观测到的评测结果选择，尚没有再设一份独立最终测试集。</p>
+          <p class="script-paragraph">最关键的是，73.7%属于微调后独立 VLA 的成绩。它说明成功轨迹能改善模型参数，和前面96.5%的冻结模型 Harness 系统结果是两类实验。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§5.6.1、Fig. 23，PDF第28–29页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-34" data-page="34" data-title="WAM反馈：DreamZero从5.1%提升到26.5%" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-34">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 34 页</span>
+                <span class="time-chip"><strong>26:50–27:40</strong><span>50秒</span></span>
+                
+              </div>
+              <h1 id="page-title-34">WAM反馈：DreamZero从5.1%提升到26.5%</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>指表格中的Swap、Task和平均值。</p></aside>
+          <p class="script-paragraph">同样的轨迹反馈方法也用于 DreamZero。这里仍然只评测 Object 套件，混合原始、Swap 和 Task 轨迹做监督微调。</p>
+          <p class="script-paragraph">原模型在两种扰动上的平均成功率是5.1%。选择同一个检查点后，Swap 达到24.0%，Task 达到29.0%，平均26.5%，增加21.4个百分点。这个共同检查点位于八千五百步。</p>
+          <p class="script-paragraph">绝对成功率仍有提升空间，但结果说明这些轨迹也能改善独立 WAM。前面的 DreamZero 迁移实验是给冻结模型换上已有 Harness；这一页则实际更新了 DreamZero 参数。两种收益来自不同的改进路径。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§5.6.2、Fig. 24，PDF第29页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-35" data-page="35" data-title="三个 Takeaways" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-35">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 35 页</span>
+                <span class="time-chip"><strong>27:40–28:40</strong><span>60秒</span></span>
+                
+              </div>
+              <h1 id="page-title-35">三个 Takeaways</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>依次指向 Build better systems、Execute. Check. Evolve.、Make experience reusable。数字只作支撑，不重新逐项展开。</p></aside>
+          <p class="script-paragraph">最后，我们用三点来总结这项工作。</p>
+          <p class="script-paragraph">第一，构建更好的系统。物理智能需要把感知、推理、动作和验证连接起来，动作模型是其中一个组件。Harness 提供可执行的组织接口，让这些能力共同完成任务。</p>
+          <p class="script-paragraph">第二，执行、检查，并持续演化。一次执行中保持代码固定，同时检查关键结果；多次执行之间利用反馈修改程序，只保留经过验证的改进。两个时间尺度共同支撑一个持续改进的系统。</p>
+          <p class="script-paragraph">第三，让经验可复用。已经验证的代码和修复技能可以服务于后续任务，成功轨迹还可以持续积累成训练数据，进一步提升动作模型。经验既能沉淀为可执行能力，也能回流到模型学习中。</p>
+          <p class="script-paragraph">更好的系统，支撑更强的物理智能。这三点也是我们希望大家带走的核心认识。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>参考演示稿 <a href="/Users/wenhaowu/Downloads/slides/index.html" target="_blank" rel="noopener noreferrer">最后一页 Three takeaways</a> 的三点；论文§4.1–4.5、§5.2、§5.6、§7。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-36" data-page="36" data-title="未来工作" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-36">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 36 页</span>
+                <span class="time-chip"><strong>28:40–29:45</strong><span>65秒</span></span>
+                
+              </div>
+              <h1 id="page-title-36">未来工作</h1>
+            </header>
+            <div class="page-body">
+              <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>四个方向按顺序讲，每个保持一句核心解释。</p></aside>
+          <p class="script-paragraph">接下来有四个方向值得继续探索。</p>
+          <p class="script-paragraph">第一，统一原子动作接口。让 PPO、VLA 和 WAM 都能按照明确的指令与完成条件提供可组合的动作，降低 Harness 更换后端的成本。</p>
+          <p class="script-paragraph">第二，用地图或持续的场景模型改善感知。把可以积累的空间信息保留下来，减少重复定位开销，同时提高定位稳定性，并进一步研究真实环境与仿真之间的迁移。</p>
+          <p class="script-paragraph">第三，让 Coding Agent 与已验证程序协作。熟悉的子任务直接复用或轻量修改代码，新的任务情况再调用开放式推理，支持更长的任务流程。</p>
+          <p class="script-paragraph">第四，探索 Harness 与模型交替改进：先用成功轨迹微调模型，再围绕更强的模型重新演化 Harness，检验多轮循环是否还能带来收益。</p>
+          <p class="script-paragraph">这个方向希望把代码演化与模型学习更紧密地连接起来，让执行经验持续转化为更强的模型和更好的 Harness。后续重点是衡量多轮迭代的收益、稳定性和成本。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>论文§8及§4.5，PDF第18、31页。四项均为后续研究方向。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="script-page" id="page-37" data-page="37" data-title="致谢与问答" data-cue-count="1" aria-hidden="true" inert>
+        <div class="reader" aria-labelledby="page-title-37">
+          <article class="page-inner">
+            <header class="page-heading">
+              <div class="page-meta">
+                <span class="page-kicker">第 37 页</span>
+                <span class="time-chip"><strong>29:45–30:00</strong><span>15秒</span></span>
+                
+              </div>
+              <h1 id="page-title-37">致谢与问答</h1>
+            </header>
+            <div class="page-body">
+              <p class="script-paragraph">我的报告到这里。希望这项工作能够为如何把已有动作能力变成可靠、可复用、可持续改进的物理智能系统，提供一个具体思路。右上角是项目主页，欢迎交流。谢谢大家。</p>
+          <aside class="cue-block" aria-label="演示提示，不用朗读"><span class="cue-label">演示提示 · 不用读</span><p>停顿，进入问答。</p></aside>
+          <p class="script-paragraph">---</p>
+          <p class="script-paragraph">## 排练与临场提示（无需朗读）</p>
+          <p class="script-paragraph">- 第6、7、10页的视频各看一轮即可。网页默认静音自动播放并循环，按 V 可暂停或继续；看清关键结果后暂停，再接着讲。 - 第13页保留完整解释，尤其要说清“程序固定，但观测、反馈控制和预设检查仍然运行”。 - 第22、33、34页是三组关键结果：冻结模型的系统收益、独立VLA微调收益、独立WAM微调收益。可以在数字之后各停半秒。 - 若第21页开始时已经超过18分钟，第25–29页每页只讲结果与一句含义，合计可回收约一分钟；第32页只强调三个独立套件模型都改善，可再回收约15秒。 - 若现场需要把问答也包含在30分钟内，可使用上述压缩方式，再缩短第6–10页重复案例和第36页展望，留出约3分钟问答。</p>
+          <p class="script-paragraph">## 备答：六个容易被问到的问题</p>
+          <p class="script-paragraph"><strong>1. 程序层面开环，会不会失去环境反馈？</strong></p>
+          <p class="script-paragraph">固定的是任务程序，高层程序不在一次执行中反复改写。感知、反馈控制、条件分支和阶段检查仍然运行。跨执行的反馈用于修改下一版程序。</p>
+          <p class="script-paragraph"><strong>2. 与直接让Agent写一次机器人代码相比，区别在哪里？</strong></p>
+          <p class="script-paragraph">框架把代码当作持续演化的对象，使用跨场景执行、独立诊断和成功合同验证修订，并分别保留可运行程序与节点级修复经验。一次代码生成只是起点。</p>
+          <p class="script-paragraph"><strong>3. 新任务都需要人工示范吗？</strong></p>
+          <p class="script-paragraph">从视频提取工作流是可选模块。已有视频、类似任务和原语信息可以帮助初始化；所有任务共同使用执行、诊断、修复、验证主循环。文中扰动轨迹采集不需要新增对应的人工演示。</p>
+          <p class="script-paragraph"><strong>4. 是否证明训练导致视觉、语言能力退化？</strong></p>
+          <p class="script-paragraph">报告依据可观察的指令跟随、定位和任务完成失败来提出系统需求。这些案例没有隔离训练机制，不能单独建立能力退化的因果结论。论文不同段落对此表述强度不一致，讲稿采用§3.1与网页备注中的保守解释。</p>
+          <p class="script-paragraph"><strong>5. 为什么微调后的模型分数低于Harness系统？</strong></p>
+          <p class="script-paragraph">独立模型与包含感知、代码控制和检查的系统具备不同的执行组件，评测协议也有差别。结果说明轨迹改善了独立模型，但不能据此精确计算还差多少系统能力。本文没有测试微调模型再加Harness的最终效果。</p>
+          <p class="script-paragraph"><strong>6. 如何理解执行成本和 Harness 与模型的协同改进？</strong></p>
+          <p class="script-paragraph">固定程序执行没有在线高层LLM API费用，但仍有感知、动作模型推理、仿真或硬件成本，也有前期代码演化成本。协同改进体现在执行反馈优化代码、成功轨迹促进模型学习；本文的数据回流实验通过监督微调量化了模型提升。进一步的多轮迭代，需要继续衡量其收益、稳定性和成本。</p>
+          <p class="script-paragraph">## 备讲核对：关键结果与口径</p>
+          <p class="script-paragraph">| 结果 | 报告数字 | 对应证据 | 解释范围 | | --- | --- | --- | --- | | 标准LIBERO | π₀.₅ 96.9% → 系统98.1% | Table 4，PDF第20页 | 三个套件；50种子包含开发种子 | | LIBERO-PRO | π₀.₅ 34.9% → 系统96.5% | Fig. 13、Table 7，PDF第21、37页 | 三套件×两扰动；同一冻结后端；+61.6个百分点 | | RoboCasa | WorldDreamer 65.0% → 系统92.2% | Table 5，PDF第22页 | 18个Atomic-Seen任务；统一20种子固定布局协议 | | robosuite | 平均96.3% | Fig. 12、Table 6，PDF第19、37页 | 七任务；开发与评测种子分离 | | BEHAVIOR适应 | Radio 84% → 100%；Can 72% → 92% | Fig. 14、20，PDF第22、26页 | 后续八轮使用失败评测种子，属于适应 | | VacuSim | 有家具11.72% → 53.92%；无家具63.76% | Fig. 16，PDF第24页 | 地面覆盖率；两地图条件不同 | | MicroDuck | 约0.8米漂移 → 接近零 | Fig. 17，PDF第24页 | 直线行走轨迹结果 | | DreamZero后端迁移 | Swap 0.6% → 73.4%；Task 9.6% → 84.4% | Fig. 18、Table 15，PDF第25、44页 | Object套件；冻结模型、无需重新演化 | | 独立VLA完整混合微调 | π₀.₅-LIBERO 34.9% → 73.7% | §5.6.1、Fig. 23，PDF第28–29页 | 九类数据等采样；训练/评测种子40/10；最佳检查点；+38.8个百分点 | | 独立WAM微调 | DreamZero 5.1% → 26.5% | §5.6.2、Fig. 24，PDF第29页 | Object套件；同一8500步检查点；+21.4个百分点 |</p>
+          <p class="script-paragraph">以上百分比和平均值沿用论文报告精度，不从平滑曲线估读，也不额外宣称统计显著性。</p>
+              <details class="evidence-block"><summary><span>备讲依据</span><kbd>E</kbd></summary><p>网页联系页。</p></details>
+            </div>
+          </article>
+        </div>
+      </section>
+      <button class="side-button previous" type="button" data-action="previous" aria-label="上一页" title="上一页">‹</button>
+      <button class="side-button next" type="button" data-action="next" aria-label="下一页" title="下一页">›</button>
+    </main>
+
+    <footer class="bottom-bar">
+      <div class="progress-wrap" role="progressbar" aria-label="讲稿进度" aria-valuemin="1" aria-valuemax="37" aria-valuenow="1"><div class="progress-bar" id="progress-bar"></div></div>
+      <span class="sr-only" id="page-announcement" aria-live="polite">第 1 页，共 37 页</span>
+      <div class="key-hints" aria-hidden="true">
+        <span class="key-hint"><kbd>←</kbd><kbd>→</kbd> 翻页</span>
+        <span class="key-hint"><kbd>E</kbd> 依据</span>
+        <span class="key-hint"><kbd>F</kbd> 全屏</span>
+        <span class="key-hint"><kbd>?</kbd> 帮助</span>
+      </div>
+      <div></div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog class="help-dialog" id="help-dialog">
+    <div class="help-card">
+      <div class="help-head">
+        <div><h2>键盘快捷键</h2><p>提词器每次只显示一页，翻页与对应幻灯片保持 1:1。</p></div>
+        <button class="close-dialog" type="button" data-action="close-help" aria-label="关闭帮助">×</button>
+      </div>
+      <div class="shortcut-grid">
+        <div class="shortcut-row"><span>下一页</span><span><kbd>→</kbd> <kbd>↓</kbd> <kbd>Space</kbd></span></div>
+        <div class="shortcut-row"><span>上一页</span><span><kbd>←</kbd> <kbd>↑</kbd> <kbd>Shift</kbd>+<kbd>Space</kbd></span></div>
+        <div class="shortcut-row"><span>第一页 / 最后一页</span><span><kbd>Home</kbd> / <kbd>End</kbd></span></div>
+        <div class="shortcut-row"><span>显示或隐藏备讲依据</span><kbd>E</kbd></div>
+        <div class="shortcut-row"><span>放大 / 缩小字号</span><span><kbd>+</kbd> / <kbd>−</kbd></span></div>
+        <div class="shortcut-row"><span>恢复自动字号</span><kbd>0</kbd></div>
+        <div class="shortcut-row"><span>浏览器全屏</span><kbd>F</kbd></div>
+        <div class="shortcut-row"><span>打开本帮助</span><kbd>?</kbd></div>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    (() => {
+      const pages = Array.from(document.querySelectorAll(".script-page"));
+      const total = pages.length;
+      const currentLabel = document.getElementById("page-current");
+      const totalLabel = document.getElementById("page-total");
+      const progressBar = document.getElementById("progress-bar");
+      const progressWrap = progressBar.parentElement;
+      const announcement = document.getElementById("page-announcement");
+      const toast = document.getElementById("toast");
+      const helpDialog = document.getElementById("help-dialog");
+      const previousButton = document.querySelector('[data-action="previous"]');
+      const nextButton = document.querySelector('[data-action="next"]');
+      const storageKeys = {
+        zoom: "harnesspai-teleprompter-zoom"
+      };
+      let current = 0;
+      let zoom = 1;
+      let toastTimer = null;
+      let resizeTimer = null;
+      let touchStartX = null;
+      let touchStartY = null;
+
+      function safeStorageGet(key) {
+        try { return localStorage.getItem(key); } catch { return null; }
+      }
+
+      function safeStorageSet(key, value) {
+        try { localStorage.setItem(key, value); } catch { /* file:// storage may be unavailable */ }
+      }
+
+      function readPageFromHash() {
+        const match = location.hash.match(/^#page-(\d+)$/);
+        return match ? Number(match[1]) - 1 : null;
+      }
+
+      function initialPage() {
+        const fromHash = readPageFromHash();
+        if (Number.isInteger(fromHash) && fromHash >= 0 && fromHash < total) return fromHash;
+        return 0;
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("is-visible");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 1800);
+      }
+
+      function clampZoom(value) {
+        return Math.min(1.28, Math.max(0.82, Math.round(value * 100) / 100));
+      }
+
+      function fitPage(page) {
+        const reader = page.querySelector(".reader");
+        if (!reader) return;
+
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const maxSize = Math.max(26, Math.min(41, viewportWidth * 0.0255));
+        const minSize = viewportHeight < 620 ? 18 : (viewportWidth < 640 ? 20 : 22);
+        const testSize = (size) => {
+          reader.style.setProperty("--reading-size", size + "px");
+          return reader.scrollHeight <= reader.clientHeight + 1;
+        };
+
+        let low = minSize;
+        let high = maxSize;
+        if (!testSize(high)) {
+          for (let index = 0; index < 10; index += 1) {
+            const mid = (low + high) / 2;
+            if (testSize(mid)) low = mid;
+            else high = mid;
+          }
+          high = low;
+        }
+
+        page.dataset.fitSize = String(Math.floor(high * 2) / 2);
+        reader.style.setProperty("--reading-size", (Number(page.dataset.fitSize) * zoom) + "px");
+      }
+
+      function scheduleFit() {
+        requestAnimationFrame(() => requestAnimationFrame(() => fitPage(pages[current])));
+      }
+
+      function applyZoom(nextZoom, announce = true) {
+        zoom = clampZoom(nextZoom);
+        safeStorageSet(storageKeys.zoom, String(zoom));
+        const page = pages[current];
+        const fitted = Number(page.dataset.fitSize || 32);
+        page.querySelector(".reader").style.setProperty("--reading-size", (fitted * zoom) + "px");
+        if (announce) showToast("阅读字号 " + Math.round(zoom * 100) + "%");
+      }
+
+      function updateChrome() {
+        const page = pages[current];
+        currentLabel.textContent = String(current + 1).padStart(2, "0");
+        totalLabel.textContent = String(total);
+        const percent = ((current + 1) / total) * 100;
+        progressBar.style.width = percent + "%";
+        progressWrap.setAttribute("aria-valuenow", String(current + 1));
+        announcement.textContent = "第 " + (current + 1) + " 页，共 " + total + " 页：" + page.dataset.title;
+        previousButton.disabled = current === 0;
+        nextButton.disabled = current === total - 1;
+        document.title = String(current + 1).padStart(2, "0") + " · " + page.dataset.title + " | HarnessPAI 提词器";
+      }
+
+      function showPage(index, options = {}) {
+        if (!Number.isInteger(index)) return;
+        const next = Math.max(0, Math.min(total - 1, index));
+        if (next === current && options.initial) {
+          pages[current].classList.add("is-active");
+          pages[current].removeAttribute("aria-hidden");
+          pages[current].inert = false;
+        } else {
+          pages.forEach((page, pageIndex) => {
+            const active = pageIndex === next;
+            page.classList.toggle("is-active", active);
+            page.setAttribute("aria-hidden", String(!active));
+            page.inert = !active;
+            if (!active) page.querySelector(".evidence-block")?.removeAttribute("open");
+          });
+        }
+
+        current = next;
+        const page = pages[current];
+        page.querySelector(".reader").scrollTop = 0;
+        updateChrome();
+
+        if (options.updateHash !== false) {
+          const nextHash = "#page-" + (current + 1);
+          if (location.hash !== nextHash) {
+            try { history.replaceState(null, "", nextHash); }
+            catch { location.hash = nextHash.slice(1); }
+          }
+        }
+        scheduleFit();
+      }
+
+      function go(delta) {
+        const next = current + delta;
+        if (next < 0) return showToast("已经是第一页");
+        if (next >= total) return showToast("已经是最后一页");
+        showPage(next);
+      }
+
+      function openSlides() {
+        window.open("index.html#slide-" + (current + 1), "_blank", "noopener");
+      }
+
+      async function toggleFullscreen() {
+        try {
+          if (document.fullscreenElement) await document.exitFullscreen();
+          else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+          else showToast("当前浏览器不支持页面全屏");
+        } catch {
+          showToast("无法进入全屏，请使用浏览器菜单");
+        }
+      }
+
+      function toggleEvidence() {
+        const details = pages[current].querySelector(".evidence-block");
+        if (!details) return showToast("本页没有备讲依据");
+        details.open = !details.open;
+        if (details.open) details.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+
+      function openHelp() {
+        if (!helpDialog.open) helpDialog.showModal();
+      }
+
+      function handleAction(action) {
+        switch (action) {
+          case "previous": go(-1); break;
+          case "next": go(1); break;
+          case "slides": openSlides(); break;
+          case "smaller": applyZoom(zoom - 0.05); break;
+          case "larger": applyZoom(zoom + 0.05); break;
+          case "fullscreen": toggleFullscreen(); break;
+          case "help": openHelp(); break;
+          case "close-help": helpDialog.close(); break;
+        }
+      }
+
+      document.addEventListener("click", (event) => {
+        const target = event.target.closest("[data-action]");
+        if (!target) return;
+        handleAction(target.dataset.action);
+        if (target.tagName === "BUTTON") target.blur();
+      });
+
+      helpDialog.addEventListener("click", (event) => {
+        if (event.target === helpDialog) helpDialog.close();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.metaKey || event.ctrlKey || event.altKey) return;
+        const target = event.target;
+        if (target.closest("summary, input, textarea, select")) return;
+
+        if (helpDialog.open) {
+          if (event.key === "Escape") helpDialog.close();
+          return;
+        }
+
+        switch (event.key) {
+          case "ArrowRight":
+          case "ArrowDown":
+          case "PageDown":
+            event.preventDefault();
+            go(1);
+            break;
+          case "ArrowLeft":
+          case "ArrowUp":
+          case "PageUp":
+            event.preventDefault();
+            go(-1);
+            break;
+          case " ":
+            event.preventDefault();
+            go(event.shiftKey ? -1 : 1);
+            break;
+          case "Home":
+            event.preventDefault();
+            showPage(0);
+            break;
+          case "End":
+            event.preventDefault();
+            showPage(total - 1);
+            break;
+          case "e":
+          case "E":
+            event.preventDefault();
+            toggleEvidence();
+            break;
+          case "+":
+          case "=":
+            event.preventDefault();
+            applyZoom(zoom + 0.05);
+            break;
+          case "-":
+          case "_":
+            event.preventDefault();
+            applyZoom(zoom - 0.05);
+            break;
+          case "0":
+            event.preventDefault();
+            applyZoom(1);
+            break;
+          case "f":
+          case "F":
+            event.preventDefault();
+            toggleFullscreen();
+            break;
+          case "?":
+            event.preventDefault();
+            openHelp();
+            break;
+          case "Escape":
+            if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+            break;
+        }
+      });
+
+      document.getElementById("main").addEventListener("pointerdown", (event) => {
+        if (event.pointerType !== "touch") return;
+        touchStartX = event.clientX;
+        touchStartY = event.clientY;
+      });
+
+      document.getElementById("main").addEventListener("pointerup", (event) => {
+        if (event.pointerType !== "touch" || touchStartX === null) return;
+        const deltaX = event.clientX - touchStartX;
+        const deltaY = event.clientY - touchStartY;
+        touchStartX = null;
+        touchStartY = null;
+        if (Math.abs(deltaX) > 65 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) go(deltaX < 0 ? 1 : -1);
+      });
+
+      window.addEventListener("hashchange", () => {
+        const index = readPageFromHash();
+        if (Number.isInteger(index) && index !== current) showPage(index, { updateHash: false });
+      });
+
+      window.addEventListener("resize", () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(scheduleFit, 120);
+      });
+
+      const savedZoom = Number(safeStorageGet(storageKeys.zoom));
+      if (Number.isFinite(savedZoom) && savedZoom >= 0.82 && savedZoom <= 1.28) zoom = savedZoom;
+      totalLabel.textContent = String(total);
+      showPage(initialPage(), { updateHash: false, initial: true });
+    })();
+  </script>
+</body>
+</html>
